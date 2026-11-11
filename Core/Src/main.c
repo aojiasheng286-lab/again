@@ -32,7 +32,7 @@
 //----------------------------------------定义全局变量--------------------------------------------//
 
 // 按键事件：0无, 1短按, 2长按, 3双键同按
-volatile uint8_t key_event = 0; //作为桥梁bro
+volatile uint8_t key_event = 0; //作为桥梁bro，明天记得跑步
 
 // 按键1的变量
 uint16_t key1_count = 0;
@@ -50,10 +50,12 @@ uint8_t key2_long_sent = 0;
 uint8_t key2_wait_double = 0;
 uint16_t key2_double_count = 0;
 
+//主循环的变量
 volatile uint8_t mode = 0;       // 0:慢闪 1:快闪 2:关闭
 volatile uint8_t key_flag = 0;   // 按键触发的标志位（1表示被按下了）
 uint32_t last_led_time = 0;      // 灯效时间戳
 
+//插上电呼吸灯的变量
 uint16_t pwm_val = 0;
 uint8_t pwm_dir = 1;
 
@@ -105,7 +107,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             }
 
             key1_count++; 
-            if (key1_count > 20) key1_pressed = 1; 
+            if (key1_count > 20) 
+            {
+                key1_pressed = 1; 
+            }
             
             // 长按判定
             if (key1_count > 1000 && key1_long_sent == 0) 
@@ -159,8 +164,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             }
 
             key2_count++; 
-            if (key2_count > 20) key2_pressed = 1; 
-            
+            if (key2_count > 20) 
+            {
+                key2_pressed = 1; 
+            }
             if (key2_count > 1000 && key2_long_sent == 0) 
             {
                 key_event = 2; 
@@ -269,7 +276,10 @@ int main(void)
           if (event == 1) // 短按：切换模式
           {
               mode++; 
-              if (mode > 3) mode = 0; 
+              if (mode > 3) 
+              {
+                mode = 0; 
+              }
           }
           else if (event == 2) // 长按：关灯
           {
@@ -285,7 +295,11 @@ int main(void)
               mode = 2; 
           }
           
-          if (mode == 0) { pwm_val = 0; pwm_dir = 1; }
+          if (mode == 0) 
+          {
+             pwm_val = 0; 
+             pwm_dir = 1; 
+          }
       }
 
       // 2. 状态机
