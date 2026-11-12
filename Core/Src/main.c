@@ -23,41 +23,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "key.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
-//----------------------------------------定义全局变量--------------------------------------------//
-
-// 按键事件：0无, 1短按, 2长按, 3双键同按
-volatile uint8_t key_event = 0; //作为桥梁bro，明天记得跑步
-
-// 按键1的变量
-uint16_t key1_count = 0;
-uint8_t key1_pressed = 0; // 是否已经确认按下
-uint8_t key1_long_sent = 0; // 长按是否已经触发过
-
-uint8_t key1_wait_double = 0;
-uint16_t key1_double_count = 0;
-
-// 按键2的变量
-uint16_t key2_count = 0;
-uint8_t key2_pressed = 0; 
-uint8_t key2_long_sent = 0; 
-
-uint8_t key2_wait_double = 0;
-uint16_t key2_double_count = 0;
-
-//主循环的变量
-volatile uint8_t mode = 0;       // 0:慢闪 1:快闪 2:关闭
-volatile uint8_t key_flag = 0;   // 按键触发的标志位（1表示被按下了）
-uint32_t last_led_time = 0;      // 灯效时间戳
-
-//插上电呼吸灯的变量
-uint16_t pwm_val = 0;
-uint8_t pwm_dir = 1;
 
 //----------------------------------------定义全局变量--------------------------------------------//
 
@@ -72,137 +43,10 @@ uint8_t pwm_dir = 1;
 /* USER CODE BEGIN PM */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-    if (htim->Instance == TIM4) 
+   if (htim->Instance == TIM4) 
     {
-        uint8_t p1 = HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin); 
-        uint8_t p2 = HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin); 
-
-        // =========================================================
-        // 最高优先级：双键同时按
-        // =========================================================
-        if (p1 == 0 && p2 == 0) 
-        {
-            if (key_event == 0) 
-            {
-                key_event = 3; 
-                key1_long_sent = 1; 
-                key2_long_sent = 1;
-                key1_wait_double = 0; // 取消双击等待，直接出双键
-                key2_wait_double = 0;
-            }
-            return; 
-        }
-
-        // =========================================================
-        // 处理按键1
-        // =========================================================
-        if (p1 == 0) // 按下
-        {
-            // 如果在等待双击状态，又按下了！-> 触发双击
-            if (key1_wait_double == 1) 
-            {
-                key_event = 4;       // 4代表双击
-                key1_wait_double = 0;// 退出等待
-                key1_long_sent = 1;  // 屏蔽此次按下产生的后续事件(比如长按)
-            }
-
-            key1_count++; 
-            if (key1_count > 20) 
-            {
-                key1_pressed = 1; 
-            }
-            
-            // 长按判定
-            if (key1_count > 1000 && key1_long_sent == 0) 
-            {
-                key_event = 2; // 2代表长按
-                key1_long_sent = 1; 
-            }
-        }
-        else // 松开
-        {
-            if (key1_pressed == 1) 
-            {
-                if (key1_long_sent == 0) 
-                {
-                    // 正常松开，不直接触发短按，而是进入“等待双击”状态
-                    key1_wait_double = 1;
-                    key1_double_count = 0; // 清零双击倒计时
-                }
-            }
-            key1_count = 0;
-            key1_pressed = 0;
-            // 注意：这里不清零 key1_long_sent，要等双击倒计时结束再清
-        }
-
-        // 双击倒计时逻辑
-        if (key1_wait_double == 1) 
-        {
-            key1_double_count++;
-            if (key1_double_count > 300) // 等待 300ms 没再按
-            {
-                key_event = 1;       // 1代表短按
-                key1_wait_double = 0;// 退出等待
-                key1_long_sent = 0;  // 恢复正常
-            }
-        }
-        else if (p1 != 0) 
-        {
-            key1_long_sent = 0; // 彻底松手后清零长按标志
-        }
-
-        // =========================================================
-        // 处理按键2 (逻辑和按键1一模一样)
-        // =========================================================
-        if (p2 == 0) 
-        {
-            if (key2_wait_double == 1) 
-            {
-                key_event = 4; 
-                key2_wait_double = 0; 
-                key2_long_sent = 1; 
-            }
-
-            key2_count++; 
-            if (key2_count > 20) 
-            {
-                key2_pressed = 1; 
-            }
-            if (key2_count > 1000 && key2_long_sent == 0) 
-            {
-                key_event = 2; 
-                key2_long_sent = 1; 
-            }
-        }
-        else 
-        {
-            if (key2_pressed == 1) 
-            {
-                if (key2_long_sent == 0) 
-                {
-                    key2_wait_double = 1;
-                    key2_double_count = 0; 
-                }
-            }
-            key2_count = 0;
-            key2_pressed = 0;
-        }
-
-        if (key2_wait_double == 1) 
-        {
-            key2_double_count++;
-            if (key2_double_count > 300) 
-            {
-                key_event = 1; 
-                key2_wait_double = 0; 
-                key2_long_sent = 0; 
-            }
-        }
-        else if (p2 != 0) 
-        {
-            key2_long_sent = 0; 
-        }
-			}
+        key_scan_task(); 
+    }
 }
 /* USER CODE END PM */
 
@@ -268,112 +112,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-      if (key_event != 0) 
-      {
-          uint8_t event = key_event; 
-          key_event = 0;             
-          
-          if (event == 1) // 短按：切换模式
-          {
-              mode++; 
-              if (mode > 3) 
-              {
-                mode = 0; 
-              }
-          }
-          else if (event == 2) // 长按：关灯
-          {
-              mode = 3; 
-          }
-          else if (event == 3) // 双键同按：恢复呼吸灯
-          {
-              mode = 0; 
-          }
-          else if (event == 4) // 双击 
-          {
-              // 双击的功能由你定，比如：直接跳到模式2(快闪)，或者你自定义个模式4
-              mode = 2; 
-          }
-          
-          if (mode == 0) 
-          {
-             pwm_val = 0; 
-             pwm_dir = 1; 
-          }
-      }
-
-      // 2. 状态机
-      uint32_t current_time = HAL_GetTick();
-
-      switch (mode)
-      {
-          case 0: // 【新增：同步呼吸灯】
-              
-              if (current_time - last_led_time >= 20) 
-              {
-                  last_led_time = current_time;
-                  
-                  if (pwm_dir == 1) 
-                  {    // 渐亮
-                      pwm_val += 10; // 每次加 10
-                      if (pwm_val >= 1000) 
-                      { 
-                        pwm_val = 1000; 
-                        pwm_dir = 0; 
-                      }
-                  } 
-                  else 
-                  {    // 渐暗
-                      pwm_val -= 10; // 每次减 10
-                      if (pwm_val <= 0) 
-                      { 
-                        pwm_val = 0; 
-                        pwm_dir = 1; 
-                      }
-                  }
-                  
-                  // 三个通道同时设置相同的占空比，实现“同步”呼吸
-                  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, pwm_val);
-                  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, pwm_val);
-                  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, pwm_val);
-              }
-              break;
-
-          case 1: // 慢闪 (用 PWM 控制，满占空比就是全亮)
-              if (current_time - last_led_time >= 500) 
-              {
-                  last_led_time = current_time;
-                  // 每次直接翻转状态
-                  static uint8_t toggle = 0;
-                  toggle = !toggle;
-                  uint16_t val = toggle ? 1000 : 0; // 1000全亮，0全灭
-                  
-                  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, val);
-                  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, val);
-                  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, val);
-              }
-              break;
-
-          case 2: // 【快闪】
-              if (current_time - last_led_time >= 100) // 时间改短
-              {
-                  last_led_time = current_time;
-                  static uint8_t toggle_fast = 0;
-                  toggle_fast = !toggle_fast;
-                  uint16_t val = toggle_fast ? 1000 : 0;
-                  
-                  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, val);
-                  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, val);
-                  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, val);
-              }
-              break;
-
-          case 3: // 【关闭】
-              __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
-              __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
-              __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
-              break;
-      }
+     led_mode_task(); // 调用小写函数
 
     /* USER CODE END WHILE */
 

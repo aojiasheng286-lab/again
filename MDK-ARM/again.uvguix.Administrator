@@ -91,7 +91,7 @@
     <WindowPosition>
       <length>44</length>
       <flags>2</flags>
-      <showCmd>3</showCmd>
+      <showCmd>2</showCmd>
       <MinPosition>
         <xPos>-32000</xPos>
         <yPos>-32000</yPos>
@@ -110,8 +110,8 @@
     <MDIClientArea>
       <RegID>0</RegID>
       <MDITabState>
-        <Len>229</Len>
-        <Data>01000000040000000100000001000000010000000100000000000000020000000000000001000000010000000000000028000000280000000100000001000000000000000100000021453A5C70726F6A656374735C616761696E5C436F72655C5372635C6D61696E2E6300000000066D61696E2E6300000000C5D4F200FFFFFFFF0100000010000000C5D4F200FFDC7800BECEA100F0A0A100BCA8E1009CC1B600F7B88600D9ADC200A5C2D700B3A6BE00EAD6A300F6FA7D00B5E99D005FC3CF00C1838300CACAD5000100000000000000020000006BFAFFFF660000000000000025030000</Data>
+        <Len>720</Len>
+        <Data>01000000040000000100000001000000010000000100000000000000020000000000000001000000010000000000000028000000280000000100000007000000010000000100000021453A5C70726F6A656374735C616761696E5C436F72655C5372635C6D61696E2E6300000000066D61696E2E6300000000C5D4F200FFFFFFFF1B453A5C70726F6A656374735C616761696E5C4B45595C6B65792E6300000000056B65792E6300000000FFDC7800FFFFFFFF1B453A5C70726F6A656374735C616761696E5C4B45595C6B65792E6800000000056B65792E6800000000BECEA100FFFFFFFF20453A5C70726F6A656374735C616761696E5C436F72655C5372635C74696D2E63000000000574696D2E6300000000F0A0A100FFFFFFFF4C453A5C70726F6A656374735C616761696E5C447269766572735C53544D3332463178785F48414C5F4472697665725C496E635C4C65676163795C73746D33325F68616C5F6C65676163792E68000000001273746D33325F68616C5F6C65676163792E6800000000BCA8E100FFFFFFFF49453A5C70726F6A656374735C616761696E5C447269766572735C53544D3332463178785F48414C5F4472697665725C496E635C73746D3332663178785F68616C5F636F727465782E68000000001673746D3332663178785F68616C5F636F727465782E68000000009CC1B600FFFFFFFF48453A5C70726F6A656374735C616761696E5C447269766572735C53544D3332463178785F48414C5F4472697665725C496E635C73746D3332663178785F68616C5F666C6173682E68000000001573746D3332663178785F68616C5F666C6173682E6800000000F7B88600FFFFFFFF0100000010000000C5D4F200FFDC7800BECEA100F0A0A100BCA8E1009CC1B600F7B88600D9ADC200A5C2D700B3A6BE00EAD6A300F6FA7D00B5E99D005FC3CF00C1838300CACAD5000100000000000000020000001684FFFF4F83FFFFAB89FFFF0E86FFFF</Data>
       </MDITabState>
     </MDIClientArea>
     <ViewEx>
@@ -1862,12 +1862,66 @@
     <ActiveMDIGroup>0</ActiveMDIGroup>
     <MDIGroup>
       <Size>100</Size>
-      <ActiveTab>0</ActiveTab>
+      <ActiveTab>1</ActiveTab>
       <Doc>
         <Name>../Core/Src/main.c</Name>
-        <ColumnNumber>22</ColumnNumber>
-        <TopLine>182</TopLine>
-        <CurrentLine>206</CurrentLine>
+        <ColumnNumber>25</ColumnNumber>
+        <TopLine>7</TopLine>
+        <CurrentLine>30</CurrentLine>
+        <Folding>1</Folding>
+        <ContractedFolders></ContractedFolders>
+        <PaneID>0</PaneID>
+      </Doc>
+      <Doc>
+        <Name>..\KEY\key.c</Name>
+        <ColumnNumber>74</ColumnNumber>
+        <TopLine>1</TopLine>
+        <CurrentLine>184</CurrentLine>
+        <Folding>1</Folding>
+        <ContractedFolders></ContractedFolders>
+        <PaneID>0</PaneID>
+      </Doc>
+      <Doc>
+        <Name>..\KEY\key.h</Name>
+        <ColumnNumber>30</ColumnNumber>
+        <TopLine>1</TopLine>
+        <CurrentLine>16</CurrentLine>
+        <Folding>1</Folding>
+        <ContractedFolders></ContractedFolders>
+        <PaneID>0</PaneID>
+      </Doc>
+      <Doc>
+        <Name>../Core/Src/tim.c</Name>
+        <ColumnNumber>0</ColumnNumber>
+        <TopLine>1</TopLine>
+        <CurrentLine>1</CurrentLine>
+        <Folding>1</Folding>
+        <ContractedFolders></ContractedFolders>
+        <PaneID>0</PaneID>
+      </Doc>
+      <Doc>
+        <Name>..\Drivers\STM32F1xx_HAL_Driver\Inc\Legacy\stm32_hal_legacy.h</Name>
+        <ColumnNumber>0</ColumnNumber>
+        <TopLine>1</TopLine>
+        <CurrentLine>1</CurrentLine>
+        <Folding>1</Folding>
+        <ContractedFolders></ContractedFolders>
+        <PaneID>0</PaneID>
+      </Doc>
+      <Doc>
+        <Name>..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_cortex.h</Name>
+        <ColumnNumber>0</ColumnNumber>
+        <TopLine>1</TopLine>
+        <CurrentLine>1</CurrentLine>
+        <Folding>1</Folding>
+        <ContractedFolders></ContractedFolders>
+        <PaneID>0</PaneID>
+      </Doc>
+      <Doc>
+        <Name>..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_flash.h</Name>
+        <ColumnNumber>0</ColumnNumber>
+        <TopLine>1</TopLine>
+        <CurrentLine>1</CurrentLine>
         <Folding>1</Folding>
         <ContractedFolders></ContractedFolders>
         <PaneID>0</PaneID>
