@@ -40,70 +40,116 @@ void key_scan_task(void)
     uint8_t p2 = HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin); 
 
     // --- 双键同按最高优先级 ---
-    if (p1 == 0 && p2 == 0) {
-        if (key_event == ev_none) {
+    if (p1 == 0 && p2 == 0) 
+    {
+        if (key_event == ev_none) 
+        {
             key_event = ev_both; 
-            key1_long_sent = 1; key2_long_sent = 1;
-            key1_wait_double = 0; key2_wait_double = 0;
+            key1_long_sent = 1; 
+            key2_long_sent = 1;
+            key1_wait_double = 0; 
+            key2_wait_double = 0;
         }
         return; 
     }
 
     // --- 按键1 状态机 ---
-    if (p1 == 0) {
-        if (key1_wait_double == 1) {
+    if (p1 == 0) 
+    {
+        if (key1_wait_double == 1) 
+        {
             key_event = ev_double; 
             key1_wait_double = 0; key1_long_sent = 1; 
         }
         key1_count++; 
-        if (key1_count > 20) key1_pressed = 1; 
-        
-        if (key1_count > 1000 && key1_long_sent == 0) {
+        if (key1_count > 20) 
+        {
+            key1_pressed = 1; 
+        }
+        if (key1_count > 1000 && key1_long_sent == 0) 
+        {
             key_event = ev_long; key1_long_sent = 1; 
         }
-    } else {
-        if (key1_pressed == 1) {
-            if (key1_long_sent == 0) {
-                key1_wait_double = 1; key1_double_count = 0; 
+    } 
+    else 
+    {
+        if (key1_pressed == 1) 
+        {
+            if (key1_long_sent == 0) 
+            {
+                key1_wait_double = 1; 
+                key1_double_count = 0; 
             }
         }
-        key1_count = 0; key1_pressed = 0;
+        key1_count = 0; 
+        key1_pressed = 0;
     }
     
-    if (key1_wait_double == 1) {
+
+    if (key1_wait_double == 1) 
+    {
         key1_double_count++;
-        if (key1_double_count > 300) {
-            key_event = ev_short; key1_wait_double = 0; key1_long_sent = 0; 
+        if (key1_double_count > 300) 
+        {
+            key_event = ev_short; 
+            key1_wait_double = 0; 
+            key1_long_sent = 0; 
         }
-    } else if (p1 != 0) { key1_long_sent = 0; }
+    } 
+    else if (p1 != 0) 
+    { 
+        key1_long_sent = 0; 
+    }
 
     // --- 按键2 状态机 ---
-    if (p2 == 0) {
-        if (key2_wait_double == 1) {
+    if (p2 == 0) 
+    {
+        if (key2_wait_double == 1) 
+        {
             key_event = ev_double; 
-            key2_wait_double = 0; key2_long_sent = 1; 
+            key2_wait_double = 0; 
+            key2_long_sent = 1; 
         }
         key2_count++; 
-        if (key2_count > 20) key2_pressed = 1; 
-        
-        if (key2_count > 1000 && key2_long_sent == 0) {
-            key_event = ev_long; key2_long_sent = 1; 
+        if (key2_count > 20) 
+        {
+            key2_pressed = 1; 
         }
-    } else {
-        if (key2_pressed == 1) {
-            if (key2_long_sent == 0) {
-                key2_wait_double = 1; key2_double_count = 0; 
+        if (key2_count > 1000 && key2_long_sent == 0) 
+        {
+            key_event = ev_long; 
+            key2_long_sent = 1; 
+        }
+    } 
+    else 
+    {
+        if (key2_pressed == 1) 
+        {
+            if (key2_long_sent == 0) 
+            {
+                key2_wait_double = 1; 
+                key2_double_count = 0; 
             }
         }
-        key2_count = 0; key2_pressed = 0;
+        key2_count = 0; 
+        key2_pressed = 0;
     }
     
-    if (key2_wait_double == 1) {
+
+    if (key2_wait_double == 1) 
+    {
         key2_double_count++;
-        if (key2_double_count > 300) {
-            key_event = ev_short; key2_wait_double = 0; key2_long_sent = 0; 
+        if (key2_double_count > 300) 
+        {
+            key_event = ev_short; 
+            key2_wait_double = 0; 
+            key2_long_sent = 0; 
         }
-    } else if (p2 != 0) { key2_long_sent = 0; }
+    }
+     else if (p2 != 0) 
+    { 
+        key2_long_sent = 0; 
+    }
 }
 
 
@@ -113,19 +159,35 @@ void key_scan_task(void)
 void led_mode_task(void)
 {
     // 1. 处理按键事件，切换模式
-    if (key_event != ev_none) {
+    if (key_event != ev_none) 
+    {
         uint8_t event = key_event; 
         key_event = ev_none; // 读完立刻清零
         
-        if (event == ev_short) {
-            mode++; if (mode > 4) mode = 0; 
+        if (event == ev_short) 
+        {
+            mode++; 
+            if (mode > 4) mode = 0; 
             flow_step = 0; // 切换模式时重置流水灯
         }
-        else if (event == ev_long)   { mode = 4; } // 长按全灭
-        else if (event == ev_both)   { mode = 0; } // 双键同按回呼吸
-        else if (event == ev_double) { mode = 3; } // 双击直接流水
+        else if (event == ev_long)   
+        { 
+            mode = 4; // 长按全灭
+        } 
+        else if (event == ev_both)   
+        { 
+            mode = 0; // 双键同按回呼吸
+        } 
+        else if (event == ev_double) 
+        { 
+            mode = 3; // 双击直接流水
+        } 
         
-        if (mode == 0) { pwm_val = 0; pwm_dir = 1; }
+        if (mode == 0) 
+        { 
+            pwm_val = 0; 
+            pwm_dir = 1; 
+        }
     }
 
     // 2. 根据 mode 执行灯效
