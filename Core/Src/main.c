@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "key.h"   // 引入你刚才写好的按键模块
+#include "uart.h"
 #include <stdio.h> // 为了用 sprintf
 #include <string.h>
 /* USER CODE END Includes */
@@ -34,7 +35,6 @@
 /* USER CODE BEGIN PTD */
 
 
-//----------------------------------------定义全局变量--------------------------------------------//
 
 /* USER CODE END PTD */
 
@@ -51,9 +51,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t rx_data;      // 接收上位机发来的单个字符
-char tx_buff[64];     // 发送给上位机的字符串缓冲区
-uint8_t uart_event = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -72,21 +70,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     }
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-    if (huart->Instance == USART1) // 确认是串口1
-    {
-        // 如果电脑发来 '1','2','3','4'，直接改变 mode（模式变量在 key.h 里 extern 过）
-        if (rx_data == '1')      mode = 0; // 呼吸
-        else if (rx_data == '2') mode = 1; // 慢闪
-        else if (rx_data == '3') mode = 2; // 快闪
-        else if (rx_data == '4') mode = 3; // 全灭
-        else if (rx_data == '5') mode = 4; // 流水灯
 
-        // 重新开启接收（因为每次接收完1个字节中断就会关闭，必须重新打开）
-        HAL_UART_Receive_IT(&huart1, &rx_data, 1);
-    }
-}
 /* USER CODE END 0 */
 
 /**
@@ -130,51 +114,25 @@ int main(void)
   HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_3);
 
-  HAL_UART_Receive_IT(&huart1, &rx_data, 1);
+  uart_start_receive();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    
-    
-    if(key_event != 0)
-    {
-      uart_event = key_event;
-    }
-
-           led_mode_task(); // 处理你的按键和灯光
-
-      // =========================================================
-      // 串口定时发送任务（每 200ms 发一次，防止上位机卡死）
-      // =========================================================
-      static uint32_t last_uart_time = 0;
-      if (HAL_GetTick() - last_uart_time >= 200)
-      {
-          last_uart_time = HAL_GetTick();
-          
-          // 题目要求：有按键事件时优先发按键，平时持续发状态
-          if (uart_event != 0) 
-          {
-              sprintf(tx_buff, "Key Event: %d\r\n", uart_event);
-              uart_event = 0;
-          }
-          else 
-          {
-              sprintf(tx_buff, "Mode: %d, LED Status Running...\r\n", mode);
-          }
-          
-          // 使用 DMA 发送，不阻塞主循环
-          HAL_UART_Transmit_DMA(&huart1, (uint8_t*)tx_buff, strlen(tx_buff));
-				}
+     
+      led_mode_task();      // 处理灯光
+      uart_process_task();  // ★ 处理串口
+    /* USER CODE END WHILE */
+  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+  
   /* USER CODE END 3 */
-}
 
+}
 /**
   * @brief System Clock Configuration
   * @retval None
