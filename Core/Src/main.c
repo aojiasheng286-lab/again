@@ -18,7 +18,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "dma.h"
+#include "i2c.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -29,6 +31,8 @@
 #include "uart.h"
 #include <stdio.h> // 为了用 sprintf
 #include <string.h>
+#include "oled.h"
+#include "my_adc.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -62,8 +66,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
    if (htim->Instance == TIM4) 
     {
         key_scan_task(); 
@@ -106,6 +109,8 @@ int main(void)
   MX_TIM4_Init();
   MX_TIM3_Init();
   MX_USART1_UART_Init();
+  MX_ADC1_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_TIM_Base_Start_IT(&htim4);
@@ -115,6 +120,14 @@ int main(void)
   HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_3);
 
   uart_start_receive();
+
+  HAL_Delay(20);
+  OLED_Init();
+  
+
+
+  //char message[50] = "";
+	
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -122,17 +135,39 @@ int main(void)
   while (1)
   {
      
-      led_mode_task();      // 处理灯光
-      uart_process_task();  // ★ 处理串口
-    /* USER CODE END WHILE */
-  }
+      uart_process_task();  // 串口：先只读 key_event，不清零（必须排在 led_mode_task 之前）
+      led_mode_task();      // 灯光：读走 key_event 并负责清零
+
+      
+      static uint32_t last_oled_time = 0;
+      if(HAL_GetTick() - last_oled_time >= 200)
+      {
+        last_oled_time = HAL_GetTick();
+        
+        OLED_NewFrame();
+        float v = adc_get_voltage();
+
+        char oled_buf[32];
+
+        sprintf(oled_buf, "ADC:%.2f", v);
+        OLED_PrintString(2, 0, oled_buf, &font16x16, OLED_COLOR_NORMAL);
+
+        char mode_buf[32];
+        sprintf(mode_buf, "mode:%d", mode);
+        OLED_PrintString(2, 20, mode_buf, &font16x16, OLED_COLOR_NORMAL);
+
+        OLED_ShowFrame();
+      }
+      
+      
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  
+  }
   /* USER CODE END 3 */
-
 }
+
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -141,6 +176,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -167,6 +203,12 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV6;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }

@@ -3,20 +3,22 @@
         {
             "name": "again",
             "includePath": [
-                "e:\\projects\\again\\Core\\Inc",
-                "e:\\projects\\again\\Drivers\\STM32F1xx_HAL_Driver\\Inc",
-                "e:\\projects\\again\\Drivers\\STM32F1xx_HAL_Driver\\Inc\\Legacy",
-                "e:\\projects\\again\\Drivers\\CMSIS\\Device\\ST\\STM32F1xx\\Include",
-                "e:\\projects\\again\\Drivers\\CMSIS\\Include",
-                "e:\\projects\\again\\KEY",
-                "e:\\projects\\again\\UART",
+                "e:\\projects\\again - 副本111\\Core\\Inc",
+                "e:\\projects\\again - 副本111\\Drivers\\STM32F1xx_HAL_Driver\\Inc",
+                "e:\\projects\\again - 副本111\\Drivers\\STM32F1xx_HAL_Driver\\Inc\\Legacy",
+                "e:\\projects\\again - 副本111\\Drivers\\CMSIS\\Device\\ST\\STM32F1xx\\Include",
+                "e:\\projects\\again - 副本111\\Drivers\\CMSIS\\Include",
+                "e:\\projects\\again - 副本111\\KEY",
+                "e:\\projects\\again - 副本111\\UART",
+                "e:\\projects\\again - 副本111\\OLED",
+                "e:\\projects\\again - 副本111\\ADC",
                 "E:\\keli core\\ARM\\ARMCLANG\\include",
                 "E:\\keli core\\ARM\\ARMCLANG\\include\\arm_linux",
                 "E:\\keli core\\ARM\\ARMCLANG\\include\\arm_linux_compat",
                 "E:\\keli core\\ARM\\ARMCLANG\\include\\libcxx",
-                "e:\\projects\\again\\MDK-ARM",
-                "e:\\projects\\again\\Core\\Src",
-                "e:\\projects\\again\\Drivers\\STM32F1xx_HAL_Driver\\Src"
+                "e:\\projects\\again - 副本111\\MDK-ARM",
+                "e:\\projects\\again - 副本111\\Core\\Src",
+                "e:\\projects\\again - 副本111\\Drivers\\STM32F1xx_HAL_Driver\\Src"
             ],
             "defines": [
                 "USE_HAL_DRIVER",

@@ -3,7 +3,7 @@
 
 // ================= 1. 定义全局变量 =================
 volatile uint8_t key_event = ev_none;
-volatile uint8_t mode = 0; // 0:呼吸 1:慢闪 2:快闪 3:全灭 4:流水灯
+volatile uint8_t mode = 0; // 0:呼吸 1:慢闪 2:快闪 3:流水灯 4:全灭
 
 // ================= 2. 私有变量 (加上 static) =================
 // static 表示这些变量只能在这个 key.c 文件里用，防止和其他文件重名
@@ -21,6 +21,10 @@ static uint8_t  key2_pressed = 0;
 static uint8_t  key2_long_sent = 0; 
 static uint8_t  key2_wait_double = 0;  
 static uint16_t key2_double_count = 0;
+
+// 双键同按锁存：只在"刚按下"那一刻触发一次
+// （否则按住不放时，key_event 一旦被主循环清零，下一毫秒又会重新触发）
+static uint8_t  both_latched = 0;
 
 // 灯效控制变量
 static uint32_t last_led_time = 0;      
@@ -42,29 +46,37 @@ void key_scan_task(void)
     // --- 双键同按最高优先级 ---
     if (p1 == 0 && p2 == 0) 
     {
-        if (key_event == ev_none) 
+        if (both_latched == 0) 
         {
-            key_event = ev_both; 
+            both_latched = 1;              // 上锁：按住期间不再重复触发
+            if (key_event == ev_none) 
+            {
+                key_event = ev_both; 
+            }
             key1_long_sent = 1; 
             key2_long_sent = 1;
             key1_wait_double = 0; 
             key2_wait_double = 0;
+            key1_count = 0;
+            key2_count = 0;
         }
         return; 
     }
+    both_latched = 0;   // 只要不是两键都按着就解锁，下次同时按下才能再触发
 
     // --- 按键1 状态机 ---
     if (p1 == 0) 
     {
-        if (key1_wait_double == 1) 
-        {
-            key_event = ev_double; 
-            key1_wait_double = 0; key1_long_sent = 1; 
-        }
         key1_count++; 
         if (key1_count > 20) 
         {
             key1_pressed = 1; 
+        }
+        // 消抖通过后才认定为双击（原来松手瞬间的抖动就被判成双击）
+        if (key1_count > 20 && key1_wait_double == 1) 
+        {
+            key_event = ev_double; 
+            key1_wait_double = 0; key1_long_sent = 1; 
         }
         if (key1_count > 1000 && key1_long_sent == 0) 
         {
@@ -85,7 +97,7 @@ void key_scan_task(void)
         key1_pressed = 0;
     }
     
-
+ 
     if (key1_wait_double == 1) 
     {
         key1_double_count++;
@@ -104,16 +116,17 @@ void key_scan_task(void)
     // --- 按键2 状态机 ---
     if (p2 == 0) 
     {
-        if (key2_wait_double == 1) 
-        {
-            key_event = ev_double; 
-            key2_wait_double = 0; 
-            key2_long_sent = 1; 
-        }
         key2_count++; 
         if (key2_count > 20) 
         {
             key2_pressed = 1; 
+        }
+        // 同上：消抖通过后才认定为双击
+        if (key2_count > 20 && key2_wait_double == 1) 
+        {
+            key_event = ev_double; 
+            key2_wait_double = 0; 
+            key2_long_sent = 1; 
         }
         if (key2_count > 1000 && key2_long_sent == 0) 
         {
@@ -161,8 +174,11 @@ void led_mode_task(void)
     // 1. 处理按键事件，切换模式
     if (key_event != ev_none) 
     {
+        // 读和清必须原子完成：中间若被 TIM4 中断插进来写入新事件，会被下面的清零动作吃掉
+        __disable_irq();
         uint8_t event = key_event; 
         key_event = ev_none; // 读完立刻清零
+        __enable_irq();
         
         if (event == ev_short) 
         {
@@ -183,11 +199,7 @@ void led_mode_task(void)
             mode = 3; // 双击直接流水
         } 
         
-        if (mode == 0) 
-        { 
-            pwm_val = 0; 
-            pwm_dir = 1; 
-        }
+        led_mode_reset();   // 切模式后统一复位灯效状态（与串口切模式共用）
     }
 
     // 2. 根据 mode 执行灯效
@@ -232,7 +244,7 @@ void led_mode_task(void)
             }
             break;
             
-        case 3: // 【模式4：流水灯】
+        case 3: // 【模式3：流水灯】
             if (current_time - last_led_time >= 200) {
                 last_led_time = current_time;
                 // 先全灭
@@ -250,10 +262,37 @@ void led_mode_task(void)
             }
             break;
 
-            case 4: // 【模式3：全灭】
-            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
-            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
-            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
+        case 4: // 【模式4：全灭】
+            // 加了时间门控：原来 while(1) 全速反复写三路 CCR，纯浪费
+            if (current_time - last_led_time >= 100) {
+                last_led_time = current_time;
+                __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+                __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+                __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
+            }
             break;
+    }
+}
+
+
+// =========================================================
+// 函数3：切模式后统一复位灯效状态
+// 按键路径和串口路径都必须调用，否则呼吸亮度/流水步数会接着上次的继续
+// =========================================================
+void led_mode_reset(void)
+{
+    flow_step = 0;
+
+    if (mode == 0) 
+    { 
+        pwm_val = 0; 
+        pwm_dir = 1; 
+    }
+
+    if (mode == 4)  // 全灭：立刻熄灯，不等那 100ms 门控
+    {
+        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
     }
 }
