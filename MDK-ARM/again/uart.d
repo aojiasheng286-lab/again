@@ -1,4 +1,4 @@
-again/uart.o: ..\UART\uart.c ..\UART\uart.h ..\Core\Inc\main.h \
+again/uart.o: ..\UART\uart.c ..\MPU6050\mpu6050.h ..\Core\Inc\main.h \
   ..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal.h \
   ..\Core\Inc\stm32f1xx_hal_conf.h \
   ..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_rcc.h \
@@ -24,4 +24,4 @@ again/uart.o: ..\UART\uart.c ..\UART\uart.h ..\Core\Inc\main.h \
   ..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_tim.h \
   ..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_tim_ex.h \
   ..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_uart.h \
-  ..\Core\Inc\usart.h ..\KEY\key.h ..\ADC\my_adc.h
+  ..\UART\uart.h ..\Core\Inc\usart.h ..\KEY\key.h ..\ADC\my_adc.h

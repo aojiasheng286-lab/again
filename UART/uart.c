@@ -1,3 +1,4 @@
+#include "mpu6050.h"
 #include "uart.h"
 #include "usart.h"
 #include "key.h"    // 需要用到 key_event 和 mode
@@ -7,7 +8,7 @@
 
 // 私有变量（加上 static，别的文件看不见）
 static uint8_t rx_data;      // 接收上位机发来的字符
-static char tx_buff[64];     // 发送缓冲区
+static char tx_buff[160];     // 发送缓冲区
 static uint8_t uart_event = 0; // 串口专属按键事件缓存
 
 // =======================================================
@@ -74,14 +75,21 @@ void uart_process_task(void)
 			
 			float v =adc_get_voltage();//万用表测得电压最大为3.25
         
-        if (uart_event != 0) 
+                if (uart_event != 0) 
         {
-            sprintf(tx_buff, "Key Event: %d | ADC : %.2f V\r\n", uart_event, v);
+            sprintf(tx_buff,
+                    "KEY:%d | M:%d | ADC:%.2f | AX:%.2f AY:%.2f AZ:%.2f | T:%.1f\r\n",
+                    uart_event, mode, v,
+                    g_mpu.ax_g, g_mpu.ay_g, g_mpu.az_g, g_mpu.temp_c);
             uart_event = 0; // 发完清零
         }
         else 
         {
-            sprintf(tx_buff, "Mode: %d | ADC : %.2f V\r\n", mode, v);
+            sprintf(tx_buff,
+                    "M:%d | ADC:%.2f | AX:%.2f AY:%.2f AZ:%.2f | G:%.0f,%.0f,%.0f | T:%.1f\r\n",
+                    mode, v,
+                    g_mpu.ax_g, g_mpu.ay_g, g_mpu.az_g,
+                    g_mpu.gx_dps, g_mpu.gy_dps, g_mpu.gz_dps, g_mpu.temp_c);
         }
         
         // DMA 发送

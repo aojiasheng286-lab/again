@@ -41,7 +41,7 @@ void key_scan_task(void)
 {
     // 假设按键按下为低电平 0
     uint8_t p1 = HAL_GPIO_ReadPin(KEY1_GPIO_Port, KEY1_Pin); 
-    uint8_t p2 = HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin); 
+    uint8_t p2 = HAL_GPIO_ReadPin(KEY2_GPIO_Port, KEY2_Pin);  
 
     // --- 双键同按最高优先级 ---
     if (p1 == 0 && p2 == 0) 
