@@ -51,18 +51,6 @@ void uart_start_receive(void)
 
 
 
-
-
-
-
-
-
-/* -------------------------------------------------------
- * 单字符命令：1~5 换灯效，p 换页
- *
- * 返回 1 表示"这是个命令，我处理完了"
- * 返回 0 表示"这不是命令，你把它当消息内容"
- * ------------------------------------------------------- */
 static uint8_t do_command(char c)
 {
     if (c == '1')
@@ -99,6 +87,33 @@ static uint8_t do_command(char c)
     return 1;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //中断回调函数
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
@@ -110,7 +125,15 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         return;
     }
 
-    /* ---------- 情况一：收到换行，说明这一行结束了 ---------- */
+
+
+
+
+
+
+
+
+    //消息
     if (rx_data == '\n' || rx_data == '\r')
     {
         line[len] = '\0';               // 补上字符串的结尾
@@ -122,7 +145,16 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
         len = 0;                        // 清空，准备收下一行
     }
-    /* ---------- 情况二：收到普通字符 ---------- */
+    
+
+
+
+
+    
+
+    
+
+    //上面函数
     else
     {
         uint8_t is_command = 0;
@@ -144,8 +176,23 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         }
     }
 
-    HAL_UART_Receive_IT(&huart1, &rx_data, 1);   // 别忘了重新打开接收
+    HAL_UART_Receive_IT(&huart1, &rx_data, 1);   // 别忘了重新打开接收，被坑过一次了
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -156,7 +203,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 //AI优化
 // =======================================================
-// 2b. 串口错误回调
+// 串口错误回调
 // 发生溢出(ORE)等错误后 HAL 会终止接收，不重新挂上就永久收不到数据，只能复位
 // =======================================================
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
@@ -176,9 +223,19 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 
 
 
-// =======================================================
-// 3. 串口定时发送任务 (在 while(1) 里调用)
-// =======================================================
+
+
+
+
+
+
+
+
+
+
+
+
+//串口定时发送任务 (在 while(1) 里调用)
 void uart_process_task(void)
 {
     // 读一份按键事件副本（只读不清，清零由 led_mode_task 负责）
