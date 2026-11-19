@@ -17,7 +17,7 @@ extern volatile uint8_t mode;
 
 // ================= 3. 声明对外提供的函数 =================
 void key_scan_task(void); // 按键扫描任务（放到 1ms 定时器中断里）
-void led_mode_task(void); // 灯效状态机任务（放到 while(1) 里）
+void led_mode_task(uint8_t allow_key);   // allow_key=0 时只跑动画，不处理按键事件
 void led_mode_reset(void); // 切模式后统一复位灯效状态（按键 / 串口两条路径都要调）
 
 #endif

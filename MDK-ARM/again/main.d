@@ -27,4 +27,4 @@ again/main.o: ..\Core\Src\main.c ..\Core\Inc\main.h \
   ..\Core\Inc\adc.h ..\Core\Inc\dma.h ..\Core\Inc\i2c.h \
   ..\Core\Inc\tim.h ..\Core\Inc\usart.h ..\Core\Inc\gpio.h ..\KEY\key.h \
   ..\UART\uart.h ..\OLED\oled.h ..\OLED\font.h ..\ADC\my_adc.h \
-  ..\MPU6050\mpu6050.h
+  ..\MPU6050\mpu6050.h ..\TEST\test.h ..\PAGE\page.h

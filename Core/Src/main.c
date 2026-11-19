@@ -34,6 +34,8 @@
 #include "oled.h"
 #include "my_adc.h"
 #include "mpu6050.h"
+#include "test.h"
+#include "page.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -71,6 +73,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
    if (htim->Instance == TIM4) 
     {
         key_scan_task(); 
+        page_key_scan();       // KEY3（PB13）← 新增
     }
 }
 
@@ -125,16 +128,10 @@ int main(void)
   HAL_Delay(20);
   OLED_Init();
 	
-	 MPU6050_Init();        // 失败也不停机，靠 g_mpu.ok 显示 MPU ERROR
-  
-    HAL_Delay(50);                 // 给 MPU6050 上电启动时间
-      uint8_t id = 0;
-      HAL_StatusTypeDef st = HAL_I2C_Mem_Read(&hi2c1, 0xD0, 0x75,
-                                              I2C_MEMADD_SIZE_8BIT, &id, 1, 100);
-      char msg[32];
-      sprintf(msg, "st=%d id=0x%02X\r\n", (int)st, id);
-      HAL_UART_Transmit(&huart1, (uint8_t *)msg, strlen(msg), 100);  // 阻塞发送，避免和 DMA 抢
-
+	MPU6050_Init();        // 失败也不停机，靠 g_mpu.ok 显示 MPU ERROR
+   
+  test_mpu_id();   
+   
   //char message[50] = "";
 	
   /* USER CODE END 2 */
@@ -145,34 +142,12 @@ int main(void)
   {
      
       uart_process_task();  // 串口：先只读 key_event，不清零（必须排在 led_mode_task 之前）
-      led_mode_task();      // 灯光：读走 key_event 并负责清零
-
       
-            static uint32_t last_oled_time = 0;
-      if(HAL_GetTick() - last_oled_time >= 500)
-      {
-        last_oled_time = HAL_GetTick();
 
-        MPU6050_ReadAll(&g_mpu);
+        if (page_current() == PAGE_MSG) msg_key_task();
+      led_mode_task(page_current() != PAGE_MSG);   // 消息页传 0，其他页传 1
 
-        OLED_NewFrame();
-        char line[24];
-
-        if (!g_mpu.ok)
-        {
-            OLED_PrintString(2, 20, "MPU ERROR", &font16x16, OLED_COLOR_NORMAL);
-        }
-        else
-        {
-            sprintf(line, "Ax:%.2f", g_mpu.ax_g);   OLED_PrintString(2,  0, line, &font16x16, OLED_COLOR_NORMAL);
-            sprintf(line, "Ay:%.2f", g_mpu.ay_g);   OLED_PrintString(2, 16, line, &font16x16, OLED_COLOR_NORMAL);
-            sprintf(line, "Az:%.2f", g_mpu.az_g);   OLED_PrintString(2, 32, line, &font16x16, OLED_COLOR_NORMAL);
-            sprintf(line, "T:%.1f",  g_mpu.temp_c); OLED_PrintString(2, 48, line, &font16x16, OLED_COLOR_NORMAL);
-        }
-
-        OLED_ShowFrame();
-      }
-      
+      page_task();    
       
 
     /* USER CODE END WHILE */

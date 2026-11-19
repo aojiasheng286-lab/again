@@ -1,0 +1,23 @@
+#ifndef __key_h
+#define __key_h
+
+#include "main.h" // 引入HAL库的基本定义，比如 uint8_t
+
+// ================= 1. 宏定义按键事件 =================
+#define ev_none       0
+#define ev_short      1 // 短按
+#define ev_long       2 // 长按
+#define ev_both       3 // 双键同按
+#define ev_double     4 // 双击
+
+// ================= 2. 声明全局变量 =================
+
+extern volatile uint8_t key_event;
+extern volatile uint8_t mode; 
+
+// ================= 3. 声明对外提供的函数 =================
+void key_scan_task(void); // 按键扫描任务（放到 1ms 定时器中断里）
+void led_mode_task(uint8_t allow_key);   // allow_key=0 时只跑动画，不处理按键事件
+void led_mode_reset(void); // 切模式后统一复位灯效状态（按键 / 串口两条路径都要调）
+
+#endif

@@ -169,38 +169,32 @@ void key_scan_task(void)
 // =========================================================
 // 函数2：灯效状态机 (while(1) 里调用)
 // =========================================================
-void led_mode_task(void)
+void led_mode_task(uint8_t allow_key)
 {
-    // 1. 处理按键事件，切换模式
-    if (key_event != ev_none) 
+    // 只有 allow_key 时才消费按键事件
+    if (allow_key)
     {
-        // 读和清必须原子完成：中间若被 TIM4 中断插进来写入新事件，会被下面的清零动作吃掉
-        __disable_irq();
-        uint8_t event = key_event; 
-        key_event = ev_none; // 读完立刻清零
-        __enable_irq();
-        
-        if (event == ev_short) 
+        if (key_event != ev_none) 
         {
-            mode++; 
-            if (mode > 4) mode = 0; 
-            flow_step = 0; // 切换模式时重置流水灯
+            __disable_irq();
+            uint8_t event = key_event; 
+            key_event = ev_none;
+            __enable_irq();
+            
+            if (event == ev_short) 
+            {
+                mode++; 
+                if (mode > 4) mode = 0; 
+                flow_step = 0;
+            }
+            else if (event == ev_long)   { mode = 4; }
+            else if (event == ev_both)   { mode = 0; }
+            else if (event == ev_double) { mode = 3; }
+
+            led_mode_reset();
         }
-        else if (event == ev_long)   
-        { 
-            mode = 4; // 长按全灭
-        } 
-        else if (event == ev_both)   
-        { 
-            mode = 0; // 双键同按回呼吸
-        } 
-        else if (event == ev_double) 
-        { 
-            mode = 3; // 双击直接流水
-        } 
-        
-        led_mode_reset();   // 切模式后统一复位灯效状态（与串口切模式共用）
     }
+
 
     // 2. 根据 mode 执行灯效
     uint32_t current_time = HAL_GetTick();

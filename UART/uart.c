@@ -1,9 +1,11 @@
+#define MSG_LEN_STR 32      // 和 page.c 里的 MSG_LEN 保持一致
 #include "mpu6050.h"
 #include "uart.h"
 #include "usart.h"
 #include "key.h"    // 需要用到 key_event 和 mode
 #include "my_adc.h"
 #include <stdio.h>
+#include "page.h"  
 #include <string.h>
 
 // 私有变量（加上 static，别的文件看不见）
@@ -24,22 +26,40 @@ void uart_start_receive(void)
 // =======================================================
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    if (huart->Instance == USART1)
+    static char    line[MSG_LEN_STR];     // 见下面的定义
+    static uint8_t len = 0;
+
+    if (huart->Instance != USART1) return;
+
+    if (rx_data == '\n' || rx_data == '\r')
     {
-        // 根据电脑发来的字符改变模式 (mode 是从 key.h 借来的)
+        // 一行的结束：长度 ≥ 2 就当消息存起来
+        if (len >= 2)
+        {
+            line[len] = '\0';
+            msg_push(line);
+        }
+        len = 0;
+    }
+    else
+    {
+        // 先攒进本行缓冲
+        if (len < 31) line[len++] = rx_data;
+        else { line[31] = '\0'; msg_push(line); len = 0; }   // 超长自动提交
+
+        // 原来的单字符命令，保持立即生效
         uint8_t changed = 0;
         if (rx_data == '1')      { mode = 0; changed = 1; }
         else if (rx_data == '2') { mode = 1; changed = 1; }
         else if (rx_data == '3') { mode = 2; changed = 1; }
         else if (rx_data == '4') { mode = 3; changed = 1; }
         else if (rx_data == '5') { mode = 4; changed = 1; }
+        else if (rx_data == 'p' || rx_data == 'P') page_request_next();
 
-        // 串口切模式也要复位灯效状态，否则呼吸亮度、流水灯步数会接着上次的继续
         if (changed) led_mode_reset();
-
-        // 重新开启接收
-        HAL_UART_Receive_IT(&huart1, &rx_data, 1);
     }
+
+    HAL_UART_Receive_IT(&huart1, &rx_data, 1);
 }
 
 // =======================================================
@@ -61,37 +81,48 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 // =======================================================
 void uart_process_task(void)
 {
-    // 读一份按键事件副本：这里只读、不清零 key_event，
-    // 清零由 led_mode_task 负责，所以 main.c 里必须先调本函数、再调 led_mode_task
+    // 读一份按键事件副本（只读不清，清零由 led_mode_task 负责）
     if (key_event != 0) {
         uart_event = key_event;
     }
 
-    // 每 500ms 发送一次
     static uint32_t last_uart_time = 0;
     if (HAL_GetTick() - last_uart_time >= 500)
     {
         last_uart_time = HAL_GetTick();
-			
-			float v =adc_get_voltage();//万用表测得电压最大为3.25
-        
-                if (uart_event != 0) 
+
+        float v = adc_get_voltage();
+
+        char prefix[16] = "";
+
+        // 这一拍如果有按键事件，就做成前缀和本拍数据一起发
+        // 注意：不能连发两次 DMA —— 第二次会因为 busy 直接失败
+        if (uart_event != 0)
         {
-            sprintf(tx_buff,
-                    "KEY:%d | M:%d | ADC:%.2f | AX:%.2f AY:%.2f AZ:%.2f | T:%.1f\r\n",
-                    uart_event, mode, v,
-                    g_mpu.ax_g, g_mpu.ay_g, g_mpu.az_g, g_mpu.temp_c);
-            uart_event = 0; // 发完清零
+            sprintf(prefix, "[KEY%d] ", uart_event);
+            uart_event = 0;
         }
-        else 
+
+        // 上位机显示的数据跟着当前页面走 —— 这就是 3.2 的"切换"
+        switch (page_current())
         {
-            sprintf(tx_buff,
-                    "M:%d | ADC:%.2f | AX:%.2f AY:%.2f AZ:%.2f | G:%.0f,%.0f,%.0f | T:%.1f\r\n",
-                    mode, v,
-                    g_mpu.ax_g, g_mpu.ay_g, g_mpu.az_g,
-                    g_mpu.gx_dps, g_mpu.gy_dps, g_mpu.gz_dps, g_mpu.temp_c);
+            case PAGE_ADC:
+                sprintf(tx_buff, "%s[P1 ADC] V=%.2f M=%d\r\n",
+                        prefix, v, mode);
+                break;
+
+            case PAGE_MPU:
+                sprintf(tx_buff, "%s[P2 MPU] A=%.2f,%.2f,%.2f G=%.0f,%.0f,%.0f T=%.1f\r\n",
+                        prefix,
+                        g_mpu.ax_g, g_mpu.ay_g, g_mpu.az_g,
+                        g_mpu.gx_dps, g_mpu.gy_dps, g_mpu.gz_dps, g_mpu.temp_c);
+                break;
+
+            default:
+                sprintf(tx_buff, "%s[P?]\r\n", prefix);
+                break;
         }
-        
+
         // DMA 发送
         HAL_UART_Transmit_DMA(&huart1, (uint8_t*)tx_buff, strlen(tx_buff));
     }

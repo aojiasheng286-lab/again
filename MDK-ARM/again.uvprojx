@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../KEY;../UART;../OLED;../ADC;../MPU6050</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../KEY;../UART;../OLED;../ADC;../MPU6050;../TEST;../PAGE</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1021,6 +1021,31 @@
               <FileName>mpu6050.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\MPU6050\mpu6050.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>TEST</GroupName>
+          <Files>
+            <File>
+              <FileName>test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\TEST\test.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>PAGE</GroupName>
+          <Files>
+            <File>
+              <FileName>page.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\PAGE\page.c</FilePath>
+            </File>
+            <File>
+              <FileName>page.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\PAGE\page.h</FilePath>
             </File>
           </Files>
         </Group>

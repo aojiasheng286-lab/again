@@ -61,6 +61,8 @@ void Error_Handler(void);
 #define KEY1_GPIO_Port GPIOA
 #define KEY2_Pin GPIO_PIN_3
 #define KEY2_GPIO_Port GPIOA
+#define KEY3_Pin GPIO_PIN_13
+#define KEY3_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
