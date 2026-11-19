@@ -46,49 +46,112 @@ PageId page_current(void)
 
 
 
-typedef struct
+/* =========================================================
+ * 三个导航按键的扫描
+ *
+ * 三个键都接成"下拉输入"，所以：
+ *     松开  ->  读到 0
+ *     按下  ->  读到 1
+ *
+ * 每个键都要消抖：连续 20 毫秒读数都一样，才算真的变了。
+ * 函数只在"刚刚稳定按下"的那一毫秒返回 1，其它时候返回 0。
+ * ========================================================= */
+
+/* ---------- KEY3（PB13）：翻页 ---------- */
+static uint8_t key3_pressed(void)
 {
-    uint8_t stable;   // 消抖后的稳定电平（1 = 按下）
-    uint8_t cnt;      // 电平"变了"已经持续多少毫秒
-} KeyDebounce;
+    static uint8_t last = 0;   // 上次确认过的电平（0=松开 1=按下）
+    static uint8_t cnt  = 0;   // 电平变了以后，持续了多少毫秒
+    uint8_t now = HAL_GPIO_ReadPin(KEY3_GPIO_Port, KEY3_Pin);
 
-/* 扫描一个按键：只在"刚刚稳定按下"的那一毫秒返回 1，其余返回 0 */
-static uint8_t key_just_pressed(GPIO_TypeDef *port, uint16_t pin, KeyDebounce *k)
-{
-    uint8_t raw;
-
-    raw = (HAL_GPIO_ReadPin(port, pin) == GPIO_PIN_SET) ? 1 : 0;
-
-    if (raw == k->stable)              // 电平没变，重新计时
+    if (now == last)           // 读数没变，计数清零
     {
-        k->cnt = 0;
+        cnt = 0;
         return 0;
     }
 
-    k->cnt++;
+    cnt++;                     // 读数变了，开始计时
 
-    if (k->cnt < 20)                   // 还没稳定 20ms
+    if (cnt < 20)              // 还没稳定 20 毫秒，先不算数
     {
         return 0;
     }
 
-    k->cnt    = 0;
-    k->stable = raw;                   // 记下新状态
+    cnt  = 0;
+    last = now;                // 确认状态真的变了
 
-    if (raw == 1)                      // 稳定到"按下"
+    if (now == 1)              // 变成"按下"，报一次
     {
         return 1;
     }
 
-    return 0;
+    return 0;                  // 变成"松开"，不报
 }
 
-static KeyDebounce k3 = { 0, 0 };
-static KeyDebounce k4 = { 0, 0 };
-static KeyDebounce k5 = { 0, 0 };
+/* ---------- KEY4（PB12）：消息上一条 ---------- */
+static uint8_t key4_pressed(void)
+{
+    static uint8_t last = 0;   // 上次确认过的电平（0=松开 1=按下）
+    static uint8_t cnt  = 0;   // 电平变了以后，持续了多少毫秒
+    uint8_t now = HAL_GPIO_ReadPin(KEY4_GPIO_Port, KEY4_Pin);
 
-static volatile uint8_t msg_up_flag   = 0;   // KEY4 按了一下 -> 上一条
-static volatile uint8_t msg_down_flag = 0;   // KEY5 按了一下 -> 下一条
+    if (now == last)           // 读数没变，计数清零
+    {
+        cnt = 0;
+        return 0;
+    }
+
+    cnt++;                     // 读数变了，开始计时
+
+    if (cnt < 20)              // 还没稳定 20 毫秒，先不算数
+    {
+        return 0;
+    }
+
+    cnt  = 0;
+    last = now;                // 确认状态真的变了
+
+    if (now == 1)              // 变成"按下"，报一次
+    {
+        return 1;
+    }
+
+    return 0;                  // 变成"松开"，不报
+}
+
+/* ---------- KEY5（PB14）：消息下一条 ---------- */
+static uint8_t key5_pressed(void)
+{
+    static uint8_t last = 0;   // 上次确认过的电平（0=松开 1=按下）
+    static uint8_t cnt  = 0;   // 电平变了以后，持续了多少毫秒
+    uint8_t now = HAL_GPIO_ReadPin(KEY5_GPIO_Port, KEY5_Pin);
+
+    if (now == last)           // 读数没变，计数清零
+    {
+        cnt = 0;
+        return 0;
+    }
+
+    cnt++;                     // 读数变了，开始计时
+
+    if (cnt < 20)              // 还没稳定 20 毫秒，先不算数
+    {
+        return 0;
+    }
+
+    cnt  = 0;
+    last = now;                // 确认状态真的变了
+
+    if (now == 1)              // 变成"按下"，报一次
+    {
+        return 1;
+    }
+
+    return 0;                  // 变成"松开"，不报
+}
+
+static volatile uint8_t msg_up_flag   = 0;   // KEY4 按了一下 -> 消息上一条
+static volatile uint8_t msg_down_flag = 0;   // KEY5 按了一下 -> 消息下一条
 
 
 
@@ -105,20 +168,20 @@ static volatile uint8_t msg_down_flag = 0;   // KEY5 按了一下 -> 下一条
 
 
 
-//13 / 14 / 15 三个导航键，共用一个消抖函数
+/* ---------- 扫描入口：每 1 毫秒被调用一次 ---------- */
 void page_key_scan(void)
 {
-    if (key_just_pressed(KEY3_GPIO_Port, KEY3_Pin, &k3))
+    if (key3_pressed())        // KEY3：切下一页
     {
         page_next_flag = 1;
     }
 
-    if (key_just_pressed(KEY4_GPIO_Port, KEY4_Pin, &k4))
+    if (key4_pressed())        // KEY4：消息上一条
     {
         msg_up_flag = 1;
     }
 
-    if (key_just_pressed(KEY5_GPIO_Port, KEY5_Pin, &k5))
+    if (key5_pressed())        // KEY5：消息下一条
     {
         msg_down_flag = 1;
     }
@@ -157,7 +220,12 @@ void msg_push(const char *s)
     strncpy(msg[msg_w], s, MSG_LEN - 1);
     msg[msg_w][MSG_LEN - 1] = '\0';       // 保证有结尾
 
-    msg_w = (msg_w + 1) % MSG_MAX;        // 存满 10 条后回头覆盖最旧的
+    msg_w = msg_w + 1;
+
+    if (msg_w >= MSG_MAX)                 // 存满 10 条，回到第 0 格，覆盖最旧的
+    {
+        msg_w = 0;
+    }
 
     if (msg_n < MSG_MAX)
     {
@@ -214,7 +282,12 @@ void msg_key_task(void)
 
         if (msg_n > 0)
         {
-            msg_view = (uint8_t)((msg_view + 1) % msg_n);
+            msg_view = msg_view + 1;
+
+            if (msg_view >= msg_n)            // 已经是最后一条，绕回第一条
+            {
+                msg_view = 0;
+            }
         }
     }
 }
@@ -387,7 +460,14 @@ static void page_render_led(void)
 
     line_text(0, "3/4  LED");
 
-    sprintf(buf, "mode%d %s", mode, mode_name[mode < 5 ? mode : 0]);
+    uint8_t m = mode;
+
+    if (m >= MODE_MAX)              // 保险：模式值异常就按呼吸灯显示
+    {
+        m = 0;
+    }
+
+    sprintf(buf, "mode%d %s", m, mode_name[m]);
     line_text(1, buf);
 
     sprintf(buf, "C1=%3d%%  C2=%3d%%", c1 / 10, c2 / 10);
@@ -512,7 +592,13 @@ void page_task(void)
     if (page_next_flag)
     {
         page_next_flag = 0;
-        page = (PageId)((page + 1) % PAGE_COUNT);
+        switch (page)
+        {
+            case PAGE_ADC:  page = PAGE_MPU; break;
+            case PAGE_MPU:  page = PAGE_LED; break;
+            case PAGE_LED:  page = PAGE_MSG; break;
+            default:        page = PAGE_ADC; break;   // 最后一页再按 -> 回到第一页
+        }
     }
 
     //每 500ms 采一次数据，刷新一屏

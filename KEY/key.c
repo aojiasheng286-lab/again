@@ -14,8 +14,11 @@
 
 /* ---------------- 1. 对外变量 ---------------- */
 
-volatile uint8_t key_event = ev_none;      // 最近一次按键事件
-volatile uint8_t mode      = MODE_BREATH;  // 当前灯效模式（取值见 key.h 的 MODE_xxx）
+/* 为什么加 volatile：
+   这两个变量会被"定时器中断"和"主循环"同时读写。
+   加上 volatile 才会每次都真正去内存里读，而不是用寄存器里的旧副本。 */
+volatile uint8_t key_event = ev_none;      // 最近一次按键事件（中断里写，主循环里读）
+volatile uint8_t mode      = MODE_BREATH;  // 当前灯效模式（取值见 key.h）
 
 // key1_count         这次按下已经持续了多少毫秒
 
@@ -345,7 +348,12 @@ void led_mode_task(void)
         switch (ev)
         {
             case ev_short:
-                mode = (mode + 1) % MODE_MAX;      // 短按：依次切换
+                mode = mode + 1;
+
+                if (mode >= MODE_MAX)          // 5 种模式循环：呼吸->慢闪->快闪->流水->全灭->呼吸
+                {
+                    mode = MODE_BREATH;
+                }
                 break;
 
             case ev_long:
@@ -410,7 +418,12 @@ void led_mode_task(void)
                 last_led_time = now;
                 toggle_state  = !toggle_state;
 
-                uint16_t v = toggle_state ? 1000 : 0;
+                uint16_t v = 0;
+
+                if (toggle_state)
+                {
+                    v = 1000;
+                }
                 set_leds(v, v, v);
             }
             break;
@@ -421,7 +434,12 @@ void led_mode_task(void)
                 last_led_time = now;
                 toggle_state  = !toggle_state;
 
-                uint16_t v = toggle_state ? 1000 : 0;
+                uint16_t v = 0;
+
+                if (toggle_state)
+                {
+                    v = 1000;
+                }
                 set_leds(v, v, v);
             }
             break;
@@ -444,7 +462,12 @@ void led_mode_task(void)
                     set_leds(0, 0, 1000);
                 }
 
-                flow_step = (flow_step + 1) % 3;            
+                flow_step = flow_step + 1;
+
+                if (flow_step > 2)
+                {
+                    flow_step = 0;      // 三颗灯轮流，转完回到第 0 颗
+                }
             }
             break;
 
