@@ -425,7 +425,7 @@ static void page_render_adc(void)
     float   v = adc_get_voltage();
     uint8_t w;
 
-    line_text(0, "1/4  ADC");
+    line_text(0, "1/6  ADC");
     line_value(2, "V", v);
 
     w = (uint8_t)(v / 3.3f * 120.0f);     // 3.3V 对应满宽 120 像素
@@ -449,7 +449,7 @@ static void page_render_adc(void)
 //六轴
 static void page_render_mpu(void)
 {
-    line_text(0,  "2/4  MPU");
+    line_text(0,  "2/6  MPU");
     line_value(1, "T",  g_mpu.temp_c);
     line_value(3, "Ax", g_mpu.ax_g);
     line_value(4, "Ay", g_mpu.ay_g);
@@ -482,7 +482,7 @@ static void page_render_led(void)
 
     char buf[24];
 
-    line_text(0, "3/4  LED");
+    line_text(0, "3/6  LED");
 
     uint8_t m = mode;
 
@@ -526,7 +526,7 @@ static void page_render_msg(void)
 
     if (msg_n == 0)
     {
-        line_text(0, "4/4  MSG");
+        line_text(0, "4/6  MSG");
         line_text(3, "NO MESSAGE");
         return;
     }
@@ -538,7 +538,7 @@ static void page_render_msg(void)
 
     len = (uint8_t)strlen(msg[msg_view]);
 
-    sprintf(buf, "4/4  MSG %d/%d", msg_view + 1, msg_n);
+    sprintf(buf, "4/6  MSG %d/%d", msg_view + 1, msg_n);
     line_text(0, buf);
 
     /* 一条消息最多 31 个字符，分两行显示，每行 21 个字符 */

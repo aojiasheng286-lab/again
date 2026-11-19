@@ -42,11 +42,12 @@ static uint16_t key2_double_count = 0;
 static uint8_t both_latched = 0;//防止呼吸灯被锁住
 
 
-static uint32_t last_led_time = 0;  
-static uint16_t pwm_val       = 0;   
-static uint8_t  pwm_dir       = 1;   
-static uint8_t  toggle_state  = 0;  
-static uint8_t  flow_step     = 0;   // 流水灯走到第几颗
+/* 灯效用到的 4 个变量 */
+static uint32_t last_led_time = 0;   // 上次更新灯效的时刻（毫秒）
+static uint16_t pwm_liang     = 0;   // 呼吸灯当前亮度：0 = 全灭，1000 = 全亮
+static uint8_t  pwm_an        = 1;   // 呼吸灯方向：1 = 正在变亮，0 = 正在变暗
+static uint8_t  toggle_state  = 0;   // 慢闪/快闪的亮灭状态
+static uint8_t  flow_step     = 0;   // 流水灯走到第几颗（0/1/2）
 
 
 
@@ -337,11 +338,10 @@ void led_mode_task(void)
     /* 第一步：有按键事件就切换模式。 */
     if (key_event != ev_none)
     {
-        //DSH
-        __disable_irq();
-        uint8_t ev = key_event;
-        key_event  = ev_none;
-        __enable_irq();
+        __disable_irq();          // 关中断：从现在开始，任何中断都不许插进来
+        uint8_t ev = key_event;   // 把当前事件读到局部变量 ev 里
+        key_event  = ev_none;     // 立刻把全局变量清零，表示"这个事件我处理了"
+        __enable_irq();           // 开中断：恢复正常
 
         switch (ev)
         {
@@ -355,15 +355,15 @@ void led_mode_task(void)
                 break;
 
             case ev_long:
-                mode = MODE_OFF;                   // 长按：全灭
+                mode = MODE_OFF;                 
                 break;
 
             case ev_both:
-                mode = MODE_BREATH;                // 双键：回呼吸
+                mode = MODE_BREATH;                
                 break;
 
             case ev_double:
-                mode = MODE_FLOW;                  // 双击：流水灯
+                mode = MODE_FLOW;                  
                 break;
 
             default:
@@ -383,35 +383,35 @@ void led_mode_task(void)
             {
                 last_led_time = now;
 
-                if (pwm_dir)
+                if (pwm_an)
                 {
-                    pwm_val += 10;
+                    pwm_liang += 10;
 
-                    if (pwm_val >= 1000)
+                    if (pwm_liang >= 1000)
                     {
-                        pwm_val = 1000;
-                        pwm_dir = 0;
+                        pwm_liang = 1000;
+                        pwm_an = 0;
                     }
                 }
                 else
                 {
-                    if (pwm_val < 10)
+                    if (pwm_liang < 10)
                     {
-                        pwm_val = 0;                    
-                        pwm_dir = 1;
+                        pwm_liang = 0;                    
+                        pwm_an = 1;
                     }
                     else
                     {
-                        pwm_val -= 10;
+                        pwm_liang -= 10;
                     }
                 }
 
-                set_leds(pwm_val, pwm_val, pwm_val);
+                set_leds(pwm_liang, pwm_liang, pwm_liang);
             }
             break;
 
         case MODE_SLOW:                                    
-            if (now - last_led_time >= 500)
+            if (now - last_led_time >= 1000)
             {
                 last_led_time = now;
                 toggle_state  = !toggle_state;
@@ -485,8 +485,8 @@ void led_mode_reset(void)
 
     if (mode == MODE_BREATH)         
     {
-        pwm_val = 0;
-        pwm_dir = 1;
+        pwm_liang = 0;
+        pwm_an = 1;
     }
     else if (mode == MODE_OFF)        
     {

@@ -57,86 +57,104 @@ void uart_start_receive(void)
 
 
 
+/* -------------------------------------------------------
+ * 单字符命令：1~5 换灯效，p 换页
+ *
+ * 返回 1 表示"这是个命令，我处理完了"
+ * 返回 0 表示"这不是命令，你把它当消息内容"
+ * ------------------------------------------------------- */
+static uint8_t do_command(char c)
+{
+    if (c == '1')
+    {
+        mode = MODE_BREATH;
+    }
+    else if (c == '2')
+    {
+        mode = MODE_SLOW;
+    }
+    else if (c == '3')
+    {
+        mode = MODE_FAST;
+    }
+    else if (c == '4')
+    {
+        mode = MODE_FLOW;
+    }
+    else if (c == '5')
+    {
+        mode = MODE_OFF;
+    }
+    else if (c == 'p' || c == 'P')
+    {
+        page_request_next();
+        return 1;
+    }
+    else
+    {
+        return 0;               // 不是命令字符
+    }
+
+    led_mode_reset();           // 灯效变了，复位一次
+    return 1;
+}
+
 //中断回调函数
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    static char line[message_len];// 见下面的定义
-    static uint8_t len = 0;
+    static char    line[message_len];   // 正在收的这一行
+    static uint8_t len = 0;             // 这一行已经收了多少个字符
 
-    if (huart->Instance != USART1)//虽然只有一个串口，造个村名繁殖机
+    if (huart->Instance != USART1)
     {
         return;
     }
 
+    /* ---------- 情况一：收到换行，说明这一行结束了 ---------- */
     if (rx_data == '\n' || rx_data == '\r')
     {
-        //一行的结束：长度 ≥ 2 就当消息存起来
-        if (len >= 2)
+        line[len] = '\0';               // 补上字符串的结尾
+
+        if (len >= 2)                   // 2 个字符以上 -> 当成一条消息存起来
         {
-            line[len] = '\0';
             msg_push(line);
         }
 
-        len = 0;
+        len = 0;                        // 清空，准备收下一行
     }
+    /* ---------- 情况二：收到普通字符 ---------- */
     else
     {
-        //先攒进本行缓冲
-        if (len < 31)
+        uint8_t is_command = 0;
+
+        /* 如果这一行还是空的，先看看这个字符是不是命令 */
+        if (len == 0)
         {
-            line[len] = rx_data;
-            len++;
-        }
-        else
-        {
-            // 超长自动提交
-            line[31] = '\0';
-            msg_push(line);
-            len = 0;
+            is_command = do_command(rx_data);
         }
 
-        // 原来的单字符命令，保持立即生效
-        uint8_t changed = 0;
-
-        if (rx_data == '1')
+        /* 不是命令，就当消息内容攒进这一行 */
+        if (is_command == 0)
         {
-            mode = 0;
-            changed = 1;
-        }
-        else if (rx_data == '2')
-        {
-            mode = 1;
-            changed = 1;
-        }
-        else if (rx_data == '3')
-        {
-            mode = 2;
-            changed = 1;
-        }
-        else if (rx_data == '4')
-        {
-            mode = 3;
-            changed = 1;
-        }
-        else if (rx_data == '5')
-        {
-            mode = 4;
-            changed = 1;
-        }
-        else if (rx_data == 'p' || rx_data == 'P')
-        {
-            page_request_next();
-        }
-
-        if (changed)
-        {
-            led_mode_reset();
+            if (len < message_len - 1)
+            {
+                line[len] = rx_data;
+                len++;
+            }
         }
     }
 
-    HAL_UART_Receive_IT(&huart1, &rx_data, 1);//这里别忘了，之前踩过的坑
+    HAL_UART_Receive_IT(&huart1, &rx_data, 1);   // 别忘了重新打开接收
 }
 
+
+
+
+
+
+
+
+//AI优化
 // =======================================================
 // 2b. 串口错误回调
 // 发生溢出(ORE)等错误后 HAL 会终止接收，不重新挂上就永久收不到数据，只能复位
@@ -150,6 +168,13 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
         HAL_UART_Receive_IT(&huart1, &rx_data, 1);
     }
 }
+
+
+
+
+
+
+
 
 // =======================================================
 // 3. 串口定时发送任务 (在 while(1) 里调用)

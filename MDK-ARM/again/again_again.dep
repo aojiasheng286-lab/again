@@ -34,7 +34,7 @@ I (..\Core\Inc\i2c.h)(0x6AFBDF5B)
 I (..\Core\Inc\tim.h)(0x6AF31F43)
 I (..\Core\Inc\usart.h)(0x6AF71856)
 I (..\Core\Inc\gpio.h)(0x6AF2F806)
-I (..\KEY\key.h)(0x6AFEE7F3)
+I (..\KEY\key.h)(0x6AFEEE6E)
 I (..\UART\uart.h)(0x6AF8565B)
 I (..\OLED\oled.h)(0x6912F64C)
 I (..\OLED\font.h)(0x6912F64C)
@@ -734,8 +734,8 @@ I (..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_pwr.h)(0x6AD5F758)
 I (..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_tim.h)(0x6AD5F758)
 I (..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_tim_ex.h)(0x6AD5F758)
 I (..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_uart.h)(0x6AD5F758)
-F (..\KEY\key.c)(0x6AFEE8D1)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m3 -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O0 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../KEY -I ../UART -I ../OLED -I ../ADC -I ../MPU6050 -I ../TEST -I ../PAGE-I./RTE/_again-I"E:/keli pack/ARM/CMSIS/6.4.0/CMSIS/Core/Include"-I"E:/keli pack/Keil/STM32F1xx_DFP/2.4.1/Device/Include"-D__UVISION_VERSION="543" -DSTM32F10X_MD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xB-o again/key.o -MMD)
-I (..\KEY\key.h)(0x6AFEE7F3)
+F (..\KEY\key.c)(0x6AFEF13F)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m3 -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O0 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../KEY -I ../UART -I ../OLED -I ../ADC -I ../MPU6050 -I ../TEST -I ../PAGE-I./RTE/_again-I"E:/keli pack/ARM/CMSIS/6.4.0/CMSIS/Core/Include"-I"E:/keli pack/Keil/STM32F1xx_DFP/2.4.1/Device/Include"-D__UVISION_VERSION="543" -DSTM32F10X_MD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xB-o again/key.o -MMD)
+I (..\KEY\key.h)(0x6AFEEE6E)
 I (..\Core\Inc\main.h)(0x6AFEE09E)
 I (..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal.h)(0x6AD5F758)
 I (..\Core\Inc\stm32f1xx_hal_conf.h)(0x6AFBDF5B)
@@ -763,8 +763,8 @@ I (..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_tim.h)(0x6AD5F758)
 I (..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_tim_ex.h)(0x6AD5F758)
 I (..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_uart.h)(0x6AD5F758)
 I (..\Core\Inc\tim.h)(0x6AF31F43)
-F (..\KEY\key.h)(0x6AFEE7F3)()
-F (..\UART\uart.c)(0x6AFEEA7E)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m3 -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O0 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../KEY -I ../UART -I ../OLED -I ../ADC -I ../MPU6050 -I ../TEST -I ../PAGE-I./RTE/_again-I"E:/keli pack/ARM/CMSIS/6.4.0/CMSIS/Core/Include"-I"E:/keli pack/Keil/STM32F1xx_DFP/2.4.1/Device/Include"-D__UVISION_VERSION="543" -DSTM32F10X_MD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xB-o again/uart.o -MMD)
+F (..\KEY\key.h)(0x6AFEEE6E)()
+F (..\UART\uart.c)(0x6AFEF7FE)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m3 -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O0 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../KEY -I ../UART -I ../OLED -I ../ADC -I ../MPU6050 -I ../TEST -I ../PAGE-I./RTE/_again-I"E:/keli pack/ARM/CMSIS/6.4.0/CMSIS/Core/Include"-I"E:/keli pack/Keil/STM32F1xx_DFP/2.4.1/Device/Include"-D__UVISION_VERSION="543" -DSTM32F10X_MD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xB-o again/uart.o -MMD)
 I (..\MPU6050\mpu6050.h)(0x6AFD2E00)
 I (..\Core\Inc\main.h)(0x6AFEE09E)
 I (..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal.h)(0x6AD5F758)
@@ -794,7 +794,7 @@ I (..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_tim_ex.h)(0x6AD5F758)
 I (..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_uart.h)(0x6AD5F758)
 I (..\UART\uart.h)(0x6AF8565B)
 I (..\Core\Inc\usart.h)(0x6AF71856)
-I (..\KEY\key.h)(0x6AFEE7F3)
+I (..\KEY\key.h)(0x6AFEEE6E)
 I (..\ADC\my_adc.h)(0x6AFBE73E)
 I (..\PAGE\page.h)(0x6AFEEA7E)
 I (..\PAGE\clock.h)(0x6AFEEA69)
@@ -920,7 +920,7 @@ I (..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_tim_ex.h)(0x6AD5F758)
 I (..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_uart.h)(0x6AD5F758)
 I (..\Core\Inc\i2c.h)(0x6AFBDF5B)
 I (..\Core\Inc\usart.h)(0x6AF71856)
-F (..\PAGE\page.c)(0x6AFEEA97)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m3 -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O0 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../KEY -I ../UART -I ../OLED -I ../ADC -I ../MPU6050 -I ../TEST -I ../PAGE-I./RTE/_again-I"E:/keli pack/ARM/CMSIS/6.4.0/CMSIS/Core/Include"-I"E:/keli pack/Keil/STM32F1xx_DFP/2.4.1/Device/Include"-D__UVISION_VERSION="543" -DSTM32F10X_MD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xB-o again/page.o -MMD)
+F (..\PAGE\page.c)(0x6AFEEEE6)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m3 -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-gdwarf-4 -O0 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../KEY -I ../UART -I ../OLED -I ../ADC -I ../MPU6050 -I ../TEST -I ../PAGE-I./RTE/_again-I"E:/keli pack/ARM/CMSIS/6.4.0/CMSIS/Core/Include"-I"E:/keli pack/Keil/STM32F1xx_DFP/2.4.1/Device/Include"-D__UVISION_VERSION="543" -DSTM32F10X_MD -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F103xB-o again/page.o -MMD)
 I (..\PAGE\page.h)(0x6AFEEA7E)
 I (..\Core\Inc\main.h)(0x6AFEE09E)
 I (..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal.h)(0x6AD5F758)
@@ -950,7 +950,7 @@ I (..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_tim_ex.h)(0x6AD5F758)
 I (..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_uart.h)(0x6AD5F758)
 I (..\OLED\oled.h)(0x6912F64C)
 I (..\OLED\font.h)(0x6912F64C)
-I (..\KEY\key.h)(0x6AFEE7F3)
+I (..\KEY\key.h)(0x6AFEEE6E)
 I (..\ADC\my_adc.h)(0x6AFBE73E)
 I (..\MPU6050\mpu6050.h)(0x6AFD2E00)
 I (..\Core\Inc\tim.h)(0x6AF31F43)
