@@ -5,10 +5,12 @@
 
 // 页面编号：顺序就是按 KEY3 切换的顺序
 typedef enum {
-    PAGE_ADC = 0,     // 1/4  电压
-    PAGE_MPU,         // 2/4  六轴数据
-    PAGE_LED,         // 3/4  灯效亮度
-    PAGE_MSG,         // 4/4  消息历史
+    PAGE_ADC = 0,     // 1/6  电压
+    PAGE_MPU,         // 2/6  六轴数据
+    PAGE_LED,         // 3/6  灯效亮度
+    PAGE_MSG,         // 4/6  消息历史
+    PAGE_SW,          // 5/6  秒表
+    PAGE_CD,          // 6/6  倒计时
     PAGE_COUNT        // 页面总数，必须永远放最后
 } PageId;
 
@@ -20,7 +22,7 @@ PageId page_current(void);       // 当前页号
 
 // ---------------- 消息历史 ----------------
 void msg_push(const char *s);    // 存一条消息（uart.c 收到整行时调）
-void msg_key_task(void);         // 消息页的按键处理（main.c 在消息页调）
+void nav_key_task(void);         // 消息页的按键处理（main.c 在消息页调）
 
 // ---------------- 给串口用的查询 ----------------
 uint16_t    page_led_duty(uint8_t ch);  // 第 ch 号灯(1/2/3)的亮度百分比 0~100

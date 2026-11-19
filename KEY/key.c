@@ -1,18 +1,16 @@
 #include "key.h"
 #include "tim.h"        // 用到 htim3 和 __HAL_TIM_SET_COMPARE
 
-/* =========================================================
- * key.c —— 按键识别 + LED 灯效
- *
- * 对外只有三样东西：
- *   key_scan_task()   1ms 定时器中断里调用，识别按键，写出 key_event
- *   led_mode_task()   主循环里调用，消费 key_event 改 mode，并驱动灯效
- *   led_mode_reset()  切换模式后复位灯效状态
- *
- * 数据流：按键 -> key_event -> mode -> 三路 PWM 亮度
- * ========================================================= */
+ 
+ 
+    // key_scan_task()   
+    // led_mode_task()  
+    // led_mode_reset()  
+ 
+    // 数据流：按键 -> key_event -> mode -> 三路 PWM 亮度
+  
 
-/* ---------------- 1. 对外变量 ---------------- */
+
 
 /* 为什么加 volatile：
    这两个变量会被"定时器中断"和"主循环"同时读写。
@@ -45,10 +43,10 @@ static uint8_t both_latched = 0;//防止呼吸灯被锁住
 
 
 static uint32_t last_led_time = 0;  
-static uint16_t pwm_val       = 0;   // 呼吸灯当前亮度，0~1000
-static uint8_t  pwm_dir       = 1;   // 1=正在变亮，0=正在变暗
-static uint8_t  toggle_state  = 0;   // 慢闪/快闪的亮灭状态
-static uint8_t  flow_step     = 0;   // 流水灯走到第几颗（0/1/2）
+static uint16_t pwm_val       = 0;   
+static uint8_t  pwm_dir       = 1;   
+static uint8_t  toggle_state  = 0;  
+static uint8_t  flow_step     = 0;   // 流水灯走到第几颗
 
 
 

@@ -36,6 +36,7 @@
 "again\mpu6050.o"
 "again\test.o"
 "again\page.o"
+"again\clock.o"
 --strict --scatter "again\again.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

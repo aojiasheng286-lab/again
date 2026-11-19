@@ -5,7 +5,8 @@
 #include "key.h"    
 #include "my_adc.h"
 #include <stdio.h>
-#include "page.h"  
+#include "page.h"
+#include "clock.h"  
 #include <string.h>
 
 
@@ -202,6 +203,14 @@ void uart_process_task(void)
 
             case PAGE_MSG:
                 sprintf(tx_buff, "%s[P4 MSG] %s\r\n", prefix, page_msg_status());
+                break;
+
+            case PAGE_SW:
+                sprintf(tx_buff, "%s[P5 SW] %d ms\r\n", prefix, (int)stopwatch_ms());
+                break;
+
+            case PAGE_CD:
+                sprintf(tx_buff, "%s[P6 CD] %d ms\r\n", prefix, (int)countdown_ms());
                 break;
 
             default:

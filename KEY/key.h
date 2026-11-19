@@ -29,6 +29,6 @@ extern volatile uint8_t mode;        // 当前灯效模式
 
 void key_scan_task(void);// 按键扫描 1ms
 void led_mode_task(void);// 灯效
-void led_mode_reset(void);// 切模式后复位灯效
+void led_mode_reset(void);// 切模式后复位灯效//作用
 
 #endif

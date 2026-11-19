@@ -3,7 +3,8 @@
 #include "key.h"        // key_event / ev_short / mode
 #include "my_adc.h"     // adc_get_voltage()
 #include "mpu6050.h"    // g_mpu
-#include "tim.h"        // htim3（读三路 PWM 的占空比）
+#include "tim.h"
+#include "clock.h"        // htim3（读三路 PWM 的占空比）
 #include <stdio.h>
 #include <string.h>
 
@@ -255,39 +256,62 @@ void msg_push(const char *s)
 
 
 
-/* 消息页的按键：KEY4 翻上一条、KEY5 翻下一条。
-   这两个键有自己的标志，不经过 key_event，所以不会和灯效按键冲突。 */
-void msg_key_task(void)
+/* 两个导航键：在不同页面干不同的事
+     - 消息页：               KEY4 = 上一条，  KEY5 = 下一条
+     - 秒表页 / 倒计时页：   KEY4 = 开始/暂停，KEY5 = 清零 */
+void nav_key_task(void)
 {
-    if (msg_up_flag)
+    if (msg_up_flag == 1)                    // KEY4 按了一下
     {
         msg_up_flag = 0;
 
-        if (msg_n > 0)
+        if (page_current() == PAGE_MSG)      // 消息页：上一条
         {
-            if (msg_view == 0)
+            if (msg_n > 0)
             {
-                msg_view = (uint8_t)(msg_n - 1);    // 到头了绕回最后一条
+                if (msg_view == 0)
+                {
+                    msg_view = msg_n - 1;    // 已经是第一条，绕到最后一条
+                }
+                else
+                {
+                    msg_view--;
+                }
             }
-            else
-            {
-                msg_view--;
-            }
+        }
+        else if (page_current() == PAGE_SW)  // 秒表页：开始 / 暂停
+        {
+            stopwatch_toggle();
+        }
+        else if (page_current() == PAGE_CD)  // 倒计时页：开始 / 暂停
+        {
+            countdown_toggle();
         }
     }
 
-    if (msg_down_flag)
+    if (msg_down_flag == 1)                  // KEY5 按了一下
     {
         msg_down_flag = 0;
 
-        if (msg_n > 0)
+        if (page_current() == PAGE_MSG)      // 消息页：下一条
         {
-            msg_view = msg_view + 1;
-
-            if (msg_view >= msg_n)            // 已经是最后一条，绕回第一条
+            if (msg_n > 0)
             {
-                msg_view = 0;
+                msg_view = msg_view + 1;
+
+                if (msg_view >= msg_n)
+                {
+                    msg_view = 0;            // 已经是最后一条，绕回第一条
+                }
             }
+        }
+        else if (page_current() == PAGE_SW)  // 秒表页：清零
+        {
+            stopwatch_clear();
+        }
+        else if (page_current() == PAGE_CD)  // 倒计时页：复位回 24 小时
+        {
+            countdown_clear();
         }
     }
 }
@@ -541,6 +565,63 @@ static void page_render_msg(void)
 
 
 
+/* ---------------- 6. 秒表和倒计时两个页面 ---------------- */
+
+/* 5/6 秒表：从 0 往上加 */
+static void page_render_sw(void)
+{
+    char buf[24];
+
+    uint32_t ms      = stopwatch_ms();
+    uint32_t total_s = ms / 1000;                    // 一共多少整秒
+    uint32_t h       = total_s / 3600;               // 多少整小时
+    uint32_t rest    = total_s - h * 3600;           // 扣掉小时，剩下多少秒
+    uint32_t m       = rest / 60;                    // 剩下多少整分钟
+    uint32_t s       = rest - m * 60;                // 再扣掉分钟，就是秒
+    uint32_t cs      = (ms - total_s * 1000) / 10;   // 毫秒部分 -> 百分秒
+
+    line_text(0, "5/6  STOPWATCH");
+
+    if (stopwatch_running() == 1)
+    {
+        line_text(1, "RUN");
+    }
+    else
+    {
+        line_text(1, "PAUSE");
+    }
+
+    sprintf(buf, "%02d:%02d:%02d.%02d", (int)h, (int)m, (int)s, (int)cs);
+    OLED_PrintString(0, 32, buf, &font16x16, OLED_COLOR_NORMAL);
+}
+
+/* 6/6 倒计时：从 24 小时往下减 */
+static void page_render_cd(void)
+{
+    char buf[24];
+
+    uint32_t ms      = countdown_ms();
+    uint32_t total_s = ms / 1000;
+    uint32_t h       = total_s / 3600;
+    uint32_t rest    = total_s - h * 3600;
+    uint32_t m       = rest / 60;
+    uint32_t s       = rest - m * 60;
+
+    line_text(0, "6/6  COUNTDOWN");
+
+    if (countdown_running() == 1)
+    {
+        line_text(1, "RUN");
+    }
+    else
+    {
+        line_text(1, "PAUSE");
+    }
+
+    sprintf(buf, "%02d:%02d:%02d", (int)h, (int)m, (int)s);
+    OLED_PrintString(0, 32, buf, &font16x16, OLED_COLOR_NORMAL);
+}
+
 static void page_render(void)
 {
     OLED_NewFrame();                 // 清显存
@@ -561,6 +642,14 @@ static void page_render(void)
 
         case PAGE_MSG:
             page_render_msg();
+            break;
+
+        case PAGE_SW:
+            page_render_sw();
+            break;
+
+        case PAGE_CD:
+            page_render_cd();
             break;
 
         default:
@@ -597,6 +686,8 @@ void page_task(void)
             case PAGE_ADC:  page = PAGE_MPU; break;
             case PAGE_MPU:  page = PAGE_LED; break;
             case PAGE_LED:  page = PAGE_MSG; break;
+            case PAGE_MSG:  page = PAGE_SW;  break;
+            case PAGE_SW:   page = PAGE_CD;  break;
             default:        page = PAGE_ADC; break;   // 最后一页再按 -> 回到第一页
         }
     }

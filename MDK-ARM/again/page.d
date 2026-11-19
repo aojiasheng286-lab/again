@@ -25,4 +25,4 @@ again/page.o: ..\PAGE\page.c ..\PAGE\page.h ..\Core\Inc\main.h \
   ..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_tim_ex.h \
   ..\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_uart.h \
   ..\OLED\oled.h ..\OLED\font.h ..\KEY\key.h ..\ADC\my_adc.h \
-  ..\MPU6050\mpu6050.h ..\Core\Inc\tim.h
+  ..\MPU6050\mpu6050.h ..\Core\Inc\tim.h ..\PAGE\clock.h

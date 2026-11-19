@@ -36,6 +36,7 @@
 #include "mpu6050.h"
 #include "test.h"
 #include "page.h"
+#include "clock.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -69,11 +70,12 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
    if (htim->Instance == TIM4) 
     {
         key_scan_task(); 
-        page_key_scan();       // KEY3（PB13）← 新增
+        page_key_scan();      
     }
 }
 
@@ -117,6 +119,9 @@ int main(void)
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
+
+
+
   HAL_TIM_Base_Start_IT(&htim4);
 
   HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_1);
@@ -132,6 +137,10 @@ int main(void)
    
   test_mpu_id();   
    
+
+
+
+  
   //char message[50] = "";
 	
   /* USER CODE END 2 */
@@ -144,7 +153,8 @@ int main(void)
       uart_process_task();  // 串口：先只读 key_event，不清零（必须排在 led_mode_task 之前）
       
 
-        msg_key_task();        // 消息翻页：KEY4/KEY5，不在消息页时没有标志，直接返回
+        nav_key_task();        // 导航键 KEY4/KEY5：消息页翻消息，时间页控制计时
+        clock_task();          // 秒表 / 倒计时 往前推
         led_mode_task();       // 灯效：每一页 KEY1/KEY2 都能用
         page_task();           // 页面
          
