@@ -22,4 +22,8 @@ PageId page_current(void);       // 当前页号
 void msg_push(const char *s);    // 存一条消息（uart.c 收到整行时调）
 void msg_key_task(void);         // 消息页的按键处理（main.c 在消息页调）
 
+// ---------------- 给串口用的查询 ----------------
+uint16_t    page_led_duty(uint8_t ch);  // 第 ch 号灯(1/2/3)的亮度百分比 0~100
+const char *page_msg_status(void);      // "第几条/共几条 内容"
+
 #endif

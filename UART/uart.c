@@ -118,6 +118,16 @@ void uart_process_task(void)
                         g_mpu.gx_dps, g_mpu.gy_dps, g_mpu.gz_dps, g_mpu.temp_c);
                 break;
 
+            case PAGE_LED:
+                sprintf(tx_buff, "%s[P3 LED] mode=%d C=%d,%d,%d%%\r\n",
+                        prefix, mode,
+                        page_led_duty(1), page_led_duty(2), page_led_duty(3));
+                break;
+
+            case PAGE_MSG:
+                sprintf(tx_buff, "%s[P4 MSG] %s\r\n", prefix, page_msg_status());
+                break;
+
             default:
                 sprintf(tx_buff, "%s[P?]\r\n", prefix);
                 break;

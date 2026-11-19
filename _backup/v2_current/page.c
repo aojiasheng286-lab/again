@@ -91,6 +91,33 @@ void msg_key_task(void)
         msg_view = (uint8_t)((msg_view + 1) % msg_n);
 }
 
+/* ---------------- 3b. 给串口用的查询 ---------------- */
+
+/* 第 ch 号灯（1/2/3）的亮度百分比。
+   TIM3 的 ARR = 999，CCR 范围 0~1000，除以 10 就是 0~100%。 */
+uint16_t page_led_duty(uint8_t ch)
+{
+    if (ch == 1) return (uint16_t)(__HAL_TIM_GET_COMPARE(&htim3, TIM_CHANNEL_1) / 10);
+    if (ch == 2) return (uint16_t)(__HAL_TIM_GET_COMPARE(&htim3, TIM_CHANNEL_2) / 10);
+    return (uint16_t)(__HAL_TIM_GET_COMPARE(&htim3, TIM_CHANNEL_3) / 10);
+}
+
+/* "第几条/共几条 + 内容"，例如 "3/10 hello" */
+const char *page_msg_status(void)
+{
+    static char s[48];
+
+    if (msg_n == 0)
+    {
+        strcpy(s, "no message");
+    }
+    else
+    {
+        sprintf(s, "%d/%d %s", msg_view + 1, msg_n, msg[msg_view]);
+    }
+    return s;
+}
+
 /* ---------------- 4. 显示小工具 ---------------- */
 /* 屏幕 128×64，用 8×6 小字体：一屏 8 行，每行 21 个字符。
    所有页面只做一件事 —— 往第 row 行写字。 */

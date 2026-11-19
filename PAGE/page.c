@@ -1,40 +1,23 @@
 #include "page.h"
 #include "oled.h"
-#include "key.h"
-#include "my_adc.h"
-#include "mpu6050.h"
+#include "key.h"        // key_event / ev_short / mode
+#include "my_adc.h"     // adc_get_voltage()
+#include "mpu6050.h"    // g_mpu
+#include "tim.h"        // htim3（读三路 PWM 的占空比）
 #include <stdio.h>
-#include <string.h> 
+#include <string.h>
 
-// ==================== 页面状态 ====================
-static volatile PageId  page           = PAGE_ADC;
-static volatile uint8_t page_next_flag = 1;   // 切页请求，任意上下文都可以置 1
+/* =========================================================
+ * page.c —— 页面显示管理
+ *
+ * 一个页面 = 一个 render 函数，往固定的 8 行里写字。
+ * 按 KEY3 或串口发 'p' 切下一页，主循环每 500ms 刷新一屏。
+ * ========================================================= */
 
-// ==================== PB13 按键：消抖 + 边沿 ====================
-static uint8_t key3_stable = 0;   // 消抖后的稳定状态：0=松开，1=按下
-static uint8_t key3_cnt    = 0;   // 读数与稳定状态不一致，持续了多少毫秒
+/* ---------------- 1. 页面状态 ---------------- */
 
-void page_key_scan(void)
-{
-    uint8_t raw = HAL_GPIO_ReadPin(KEY3_GPIO_Port, KEY3_Pin);   // 下拉：1 = 按下
-
-    if (raw != key3_stable)          // 和稳定状态不一致 → 可能只是抖动
-    {
-        key3_cnt++;
-        if (key3_cnt >= 20)          // 连续 20ms 都是这个值 → 认定真的变了
-        {
-            key3_cnt    = 0;
-            key3_stable = raw;         
-            {
-                page_next_flag = 1;
-            }
-        }
-    }
-    else
-    {
-        key3_cnt = 0;
-    }
-}
+static volatile PageId  page           = PAGE_ADC;  // 当前页
+static volatile uint8_t page_next_flag = 0;         // 置 1 = 请求切下一页
 
 void page_request_next(void)
 {
@@ -46,33 +29,53 @@ PageId page_current(void)
     return page;
 }
 
-// ==================== 消息历史（10 条）====================
-#define MSG_MAX  10
-#define MSG_LEN  32
+/* ---------------- 2. KEY3(PB13) 扫描 ---------------- */
+/* 在 TIM4 的 1ms 中断里调用。PB13 配的是下拉，所以 1 = 按下。 */
 
-static char    msg[MSG_MAX][MSG_LEN];   // 10 × 32 字节
-static uint8_t msg_w    = 0;            // 下一条写到哪一格
-static uint8_t msg_n    = 0;            // 已经存了几条（最多 10）
-static uint8_t msg_view = 0;            // 现在看第几条
+static uint8_t key3_stable = 0;   // 消抖后的稳定电平
+static uint8_t key3_cnt    = 0;   // 电平"变了"已经持续多少毫秒
 
-// 存一条
+void page_key_scan(void)
+{
+    uint8_t raw = HAL_GPIO_ReadPin(KEY3_GPIO_Port, KEY3_Pin);
+
+    if (raw == key3_stable)            // 电平没变，重新计时
+    {
+        key3_cnt = 0;
+        return;
+    }
+
+    if (++key3_cnt < 20) return;       // 还没稳定 20ms，继续等
+
+    key3_cnt    = 0;
+    key3_stable = raw;                 // 记下新状态
+
+    if (raw == 1) page_next_flag = 1;  // 只在"按下"那一下触发，松开不触发
+}
+
+/* ---------------- 3. 消息历史（最近 10 条）---------------- */
+
+#define MSG_MAX 10    // 最多保存 10 条
+#define MSG_LEN 32    // 每条最多 31 个字符
+
+static char    msg[MSG_MAX][MSG_LEN];
+static uint8_t msg_w    = 0;   // 下一条写到哪一格
+static uint8_t msg_n    = 0;   // 已经存了几条（最多 10）
+static uint8_t msg_view = 0;   // 正在看第几条
+
 void msg_push(const char *s)
 {
     strncpy(msg[msg_w], s, MSG_LEN - 1);
-    msg[msg_w][MSG_LEN - 1] = '\0';     // 保险：强制结尾
+    msg[msg_w][MSG_LEN - 1] = '\0';       // 保证有结尾
 
-    msg_w = (msg_w + 1) % MSG_MAX;      // 写满就回到第 0 格
+    msg_w = (msg_w + 1) % MSG_MAX;        // 存满 10 条后回头覆盖最旧的
     if (msg_n < MSG_MAX) msg_n++;
 
-    msg_view = 0;                       // 来新消息就跳回第一条
+    msg_view = 0;                          // 来新消息就跳回第一条
 }
 
-uint8_t msg_total(void)
-{
-    return msg_n;
-}
-
-// 消息页的按键处理：按一下就往下翻
+/* 消息页的按键：短按往下翻一条。
+   这里读走并清掉 key_event，所以 led_mode_task 拿不到，不会顺带切换灯效。 */
 void msg_key_task(void)
 {
     uint8_t ev;
@@ -81,108 +84,174 @@ void msg_key_task(void)
 
     __disable_irq();
     ev = key_event;
-    key_event = ev_none;                // 自己清掉，这样 led_mode_task 就收不到了
+    key_event = ev_none;
     __enable_irq();
 
     if (ev == ev_short && msg_n > 0)
-    {
-        msg_view = (uint8_t)((msg_view + 1) % msg_n);   // 翻下一条，到头回第一条
-    }
+        msg_view = (uint8_t)((msg_view + 1) % msg_n);
 }
 
-static void page_render_msg(void)
+/* ---------------- 3b. 给串口用的查询 ---------------- */
+
+/* 第 ch 号灯（1/2/3）的亮度百分比。
+   TIM3 的 ARR = 999，CCR 范围 0~1000，除以 10 就是 0~100%。 */
+uint16_t page_led_duty(uint8_t ch)
 {
-    char buf[MSG_LEN];
+    if (ch == 1) return (uint16_t)(__HAL_TIM_GET_COMPARE(&htim3, TIM_CHANNEL_1) / 10);
+    if (ch == 2) return (uint16_t)(__HAL_TIM_GET_COMPARE(&htim3, TIM_CHANNEL_2) / 10);
+    return (uint16_t)(__HAL_TIM_GET_COMPARE(&htim3, TIM_CHANNEL_3) / 10);
+}
+
+/* "第几条/共几条 + 内容"，例如 "3/10 hello" */
+const char *page_msg_status(void)
+{
+    static char s[48];
 
     if (msg_n == 0)
     {
-        OLED_PrintString(0, 24, "NO MSG", &font16x16, OLED_COLOR_NORMAL);
+        strcpy(s, "no message");
+    }
+    else
+    {
+        sprintf(s, "%d/%d %s", msg_view + 1, msg_n, msg[msg_view]);
+    }
+    return s;
+}
+
+/* ---------------- 4. 显示小工具 ---------------- */
+/* 屏幕 128×64，用 8×6 小字体：一屏 8 行，每行 21 个字符。
+   所有页面只做一件事 —— 往第 row 行写字。 */
+
+static void line_text(uint8_t row, const char *s)
+{
+    OLED_PrintASCIIString(0, row * 8, (char *)s, &afont8x6, OLED_COLOR_NORMAL);
+}
+
+static void line_value(uint8_t row, const char *name, float v)
+{
+    char buf[24];
+    sprintf(buf, "%s=%.2f", name, v);
+    line_text(row, buf);
+}
+
+/* ---------------- 5. 四个页面 ---------------- */
+
+/* 1/4 电压 */
+static void page_render_adc(void)
+{
+    float   v = adc_get_voltage();
+    uint8_t w;
+
+    line_text(0, "1/4  ADC");
+    line_value(2, "V", v);
+
+    w = (uint8_t)(v / 3.3f * 120.0f);     // 3.3V 对应满宽 120 像素
+    if (w > 120) w = 120;
+    OLED_DrawRectangle(4, 40, 120, 10, OLED_COLOR_NORMAL);
+    OLED_DrawFilledRectangle(4, 40, w, 10, OLED_COLOR_NORMAL);
+}
+
+/* 2/4 六轴 */
+static void page_render_mpu(void)
+{
+    line_text(0,  "2/4  MPU");
+    line_value(1, "T",  g_mpu.temp_c);
+    line_value(3, "Ax", g_mpu.ax_g);
+    line_value(4, "Ay", g_mpu.ay_g);
+    line_value(5, "Az", g_mpu.az_g);
+}
+
+/* 3/4 灯效亮度 */
+static const char *const mode_name[] = { "BREATH", "SLOW", "FAST", "FLOW", "OFF" };
+
+static void page_render_led(void)
+{
+    /* TIM3 的 ARR = 999，所以 CCR 是 0~1000，除以 10 正好是 0~100% */
+    uint16_t c1 = (uint16_t)__HAL_TIM_GET_COMPARE(&htim3, TIM_CHANNEL_1);
+    uint16_t c2 = (uint16_t)__HAL_TIM_GET_COMPARE(&htim3, TIM_CHANNEL_2);
+    uint16_t c3 = (uint16_t)__HAL_TIM_GET_COMPARE(&htim3, TIM_CHANNEL_3);
+    char buf[24];
+
+    line_text(0, "3/4  LED");
+
+    sprintf(buf, "mode%d %s", mode, mode_name[mode < 5 ? mode : 0]);
+    line_text(1, buf);
+
+    sprintf(buf, "C1=%3d%%  C2=%3d%%", c1 / 10, c2 / 10);
+    line_text(3, buf);
+
+    sprintf(buf, "C3=%3d%%", c3 / 10);
+    line_text(4, buf);
+}
+
+/* 4/4 消息 */
+static void page_render_msg(void)
+{
+    char    buf[MSG_LEN];
+    uint8_t len;
+
+    if (msg_n == 0)
+    {
+        line_text(0, "4/4  MSG");
+        line_text(3, "NO MESSAGE");
         return;
     }
 
     if (msg_view >= msg_n) msg_view = 0;
+    len = (uint8_t)strlen(msg[msg_view]);
 
-    // 第一行：第几条 / 共几条
-    sprintf(buf, "%d/%d", msg_view + 1, msg_n);
-    OLED_PrintASCIIString(0, 0, buf, &afont8x6, OLED_COLOR_NORMAL);
+    sprintf(buf, "4/4  MSG %d/%d", msg_view + 1, msg_n);
+    line_text(0, buf);
 
-    // 第二行：消息内容（一行最多 21 个字符，多了截断）
+    /* 一条消息最多 31 个字符，分两行显示，每行 21 个字符 */
     strncpy(buf, msg[msg_view], 21);
     buf[21] = '\0';
-    OLED_PrintASCIIString(0, 20, buf, &afont8x6, OLED_COLOR_NORMAL);
+    line_text(3, buf);
+
+    if (len > 21)
+    {
+        strncpy(buf, msg[msg_view] + 21, 21);
+        buf[21] = '\0';
+        line_text(4, buf);
+    }
 }
 
-// ==================== 各页面绘制 ====================
-// 约定：每个 page_render_xxx() 只负责往显存里画，不改任何状态
+/* ---------------- 6. 按页号分派 ---------------- */
 
-static void page_render_adc(void)
-{
-    char buf[24];
-    float v = adc_get_voltage();
-
-    sprintf(buf, "2/3 ADC");
-    OLED_PrintString(0, 0, buf, &font16x16, OLED_COLOR_NORMAL);
-
-    sprintf(buf, "V:%.2f", v);
-    OLED_PrintString(0, 20, buf, &font16x16, OLED_COLOR_NORMAL);
-
-    // 一条电压进度条（按 3.3V 满量程算，方便一眼看出高低）
-    uint8_t w = (uint8_t)(v / 3.3f * 120.0f);
-    if (w > 120) w = 120;
-    OLED_DrawRectangle(4, 44, 118, 10, OLED_COLOR_NORMAL);
-    OLED_DrawFilledRectangle(4, 44, w, 10, OLED_COLOR_NORMAL);
-}
-
-static void page_render_mpu(void)
-{
-    char buf[24];
-
-    sprintf(buf, "1/3 T:%.1f", g_mpu.temp_c);
-    OLED_PrintString(0, 0, buf, &font16x16, OLED_COLOR_NORMAL);
-
-    sprintf(buf, "Ax:%.2f", g_mpu.ax_g);
-    OLED_PrintString(0, 16, buf, &font16x16, OLED_COLOR_NORMAL);
-
-    sprintf(buf, "Ay:%.2f", g_mpu.ay_g);
-    OLED_PrintString(0, 32, buf, &font16x16, OLED_COLOR_NORMAL);
-
-    sprintf(buf, "Az:%.2f", g_mpu.az_g);
-    OLED_PrintString(0, 48, buf, &font16x16, OLED_COLOR_NORMAL);
-}
-
-// ==================== 分派：switch 状态机 ====================
 static void page_render(void)
 {
-    OLED_NewFrame();                 // 1) 清显存
+    OLED_NewFrame();                 // 清显存
 
-    switch (page)                    // 2) 按当前页号分派
+    switch (page)
     {
         case PAGE_ADC: page_render_adc(); break;
         case PAGE_MPU: page_render_mpu(); break;
-        case PAGE_MSG: page_render_msg(); break;  
-        default:       page = PAGE_ADC;   break;   // 兜底，防止状态跑飞
+        case PAGE_LED: page_render_led(); break;
+        case PAGE_MSG: page_render_msg(); break;
+        default:       page = PAGE_ADC;   break;   // 兜底
     }
 
-    OLED_ShowFrame();                // 3) 整屏推给 OLED
+    OLED_ShowFrame();                // 整屏推给 OLED
 }
 
-// ==================== 任务入口 ====================
+/* ---------------- 7. 任务入口 ---------------- */
+
 void page_task(void)
 {
-    // 1) 先处理切页请求
+    static uint32_t last = 0;
+
+    /* 先看有没有切页请求 */
     if (page_next_flag)
     {
         page_next_flag = 0;
         page = (PageId)((page + 1) % PAGE_COUNT);
     }
 
-    // 2) 每 500ms 采一次数据 + 刷一屏
-    static uint32_t last = 0;
+    /* 每 500ms 采一次数据，刷新一屏 */
     if (HAL_GetTick() - last >= 500)
     {
         last = HAL_GetTick();
-
-        MPU6050_ReadAll(&g_mpu);     // 不管在哪一页都采，保证串口那边数据是新的
+        MPU6050_ReadAll(&g_mpu);     // 不管在哪一页都采，串口那边要用
         page_render();
     }
 }
