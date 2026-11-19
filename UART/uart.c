@@ -1,65 +1,139 @@
-#define MSG_LEN_STR 32      // 和 page.c 里的 MSG_LEN 保持一致
+#define message_len 32     
 #include "mpu6050.h"
 #include "uart.h"
 #include "usart.h"
-#include "key.h"    // 需要用到 key_event 和 mode
+#include "key.h"    
 #include "my_adc.h"
 #include <stdio.h>
 #include "page.h"  
 #include <string.h>
 
-// 私有变量（加上 static，别的文件看不见）
-static uint8_t rx_data;      // 接收上位机发来的字符
-static char tx_buff[160];     // 发送缓冲区
-static uint8_t uart_event = 0; // 串口专属按键事件缓存
 
-// =======================================================
-// 1. 启动接收 (在 main.c 的初始化里调用)
-// =======================================================
+static uint8_t rx_data;// 接收上位机发来的字符
+static char tx_buff[160];// 发送缓冲区
+static uint8_t uart_event = 0;// 串口专属按键事件缓存
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//启动回调函数
 void uart_start_receive(void)
 {
     HAL_UART_Receive_IT(&huart1, &rx_data, 1);
 }
 
-// =======================================================
-// 2. 串口中断回调 (收到数据时自动触发)
-// =======================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//中断回调函数
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    static char    line[MSG_LEN_STR];     // 见下面的定义
+    static char line[message_len];// 见下面的定义
     static uint8_t len = 0;
 
-    if (huart->Instance != USART1) return;
+    if (huart->Instance != USART1)//虽然只有一个串口，造个村名繁殖机
+    {
+        return;
+    }
 
     if (rx_data == '\n' || rx_data == '\r')
     {
-        // 一行的结束：长度 ≥ 2 就当消息存起来
+        //一行的结束：长度 ≥ 2 就当消息存起来
         if (len >= 2)
         {
             line[len] = '\0';
             msg_push(line);
         }
+
         len = 0;
     }
     else
     {
-        // 先攒进本行缓冲
-        if (len < 31) line[len++] = rx_data;
-        else { line[31] = '\0'; msg_push(line); len = 0; }   // 超长自动提交
+        //先攒进本行缓冲
+        if (len < 31)
+        {
+            line[len] = rx_data;
+            len++;
+        }
+        else
+        {
+            // 超长自动提交
+            line[31] = '\0';
+            msg_push(line);
+            len = 0;
+        }
 
         // 原来的单字符命令，保持立即生效
         uint8_t changed = 0;
-        if (rx_data == '1')      { mode = 0; changed = 1; }
-        else if (rx_data == '2') { mode = 1; changed = 1; }
-        else if (rx_data == '3') { mode = 2; changed = 1; }
-        else if (rx_data == '4') { mode = 3; changed = 1; }
-        else if (rx_data == '5') { mode = 4; changed = 1; }
-        else if (rx_data == 'p' || rx_data == 'P') page_request_next();
 
-        if (changed) led_mode_reset();
+        if (rx_data == '1')
+        {
+            mode = 0;
+            changed = 1;
+        }
+        else if (rx_data == '2')
+        {
+            mode = 1;
+            changed = 1;
+        }
+        else if (rx_data == '3')
+        {
+            mode = 2;
+            changed = 1;
+        }
+        else if (rx_data == '4')
+        {
+            mode = 3;
+            changed = 1;
+        }
+        else if (rx_data == '5')
+        {
+            mode = 4;
+            changed = 1;
+        }
+        else if (rx_data == 'p' || rx_data == 'P')
+        {
+            page_request_next();
+        }
+
+        if (changed)
+        {
+            led_mode_reset();
+        }
     }
 
-    HAL_UART_Receive_IT(&huart1, &rx_data, 1);
+    HAL_UART_Receive_IT(&huart1, &rx_data, 1);//这里别忘了，之前踩过的坑
 }
 
 // =======================================================
@@ -82,11 +156,13 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 void uart_process_task(void)
 {
     // 读一份按键事件副本（只读不清，清零由 led_mode_task 负责）
-    if (key_event != 0) {
+    if (key_event != 0)
+    {
         uart_event = key_event;
     }
 
     static uint32_t last_uart_time = 0;
+
     if (HAL_GetTick() - last_uart_time >= 500)
     {
         last_uart_time = HAL_GetTick();

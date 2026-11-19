@@ -13,4 +13,4 @@ float adc_get_voltage(void)
     HAL_ADC_Stop(&hadc1);
     
     return (float)adc_value * 3.3f / 4095.0f;
-}
+}  

@@ -144,12 +144,11 @@ int main(void)
       uart_process_task();  // 串口：先只读 key_event，不清零（必须排在 led_mode_task 之前）
       
 
-        if (page_current() == PAGE_MSG) msg_key_task();
-      led_mode_task(page_current() != PAGE_MSG);   // 消息页传 0，其他页传 1
-
-      page_task();    
-      
-
+        msg_key_task();        // 消息翻页：KEY4/KEY5，不在消息页时没有标志，直接返回
+        led_mode_task();       // 灯效：每一页 KEY1/KEY2 都能用
+        page_task();           // 页面
+         
+    
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

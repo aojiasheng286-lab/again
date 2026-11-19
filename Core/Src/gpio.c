@@ -66,11 +66,11 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : KEY3_Pin */
-  GPIO_InitStruct.Pin = KEY3_Pin;
+  /*Configure GPIO pins : KEY4_Pin KEY3_Pin KEY5_Pin */
+  GPIO_InitStruct.Pin = KEY4_Pin|KEY3_Pin|KEY5_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(KEY3_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 }
 
